@@ -30,7 +30,7 @@ Records are checked with `validateRecord` when fetched. An invalid record throws
 
 ## Browser
 
-The SDK uses only `fetch`, `TextEncoder` and standard built-ins.
+Versimo uses only `fetch`, `TextEncoder` and standard built-ins.
 
 ```ts
 import { createClient } from 'versimo';
@@ -68,9 +68,45 @@ export function Billing({ userId }: { userId: string }) {
 }
 ```
 
+## React Native
+
+Versimo works in React Native as it is. It uses `fetch` and standard built-ins. The bucket needs UTF-8 bytes, so it uses `TextEncoder` when the engine has it (Hermes does from React Native 0.74) and a small built-in encoder when it does not. Both give the same buckets.
+
+Use a stable id. Store a random id for anonymous users, for example with AsyncStorage, and reuse it.
+
+```tsx
+import { useEffect, useState } from 'react';
+import { createClient } from 'versimo';
+
+const versimo = createClient({ source: 'https://config.example.com/versimo' });
+
+export function useModuleVersion(module: string, userId: string) {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    versimo
+      .version(module, { userId })
+      .then((v) => live && setVersion(v))
+      .catch(() => live && setVersion(null));
+    return () => {
+      live = false;
+    };
+  }, [module, userId]);
+  return version;
+}
+
+export function Checkout({ userId }: { userId: string }) {
+  const version = useModuleVersion('checkout', userId);
+  if (version === null) return <CheckoutCurrent />;
+  return version.startsWith('3.1.') ? <CheckoutNext /> : <CheckoutCurrent />;
+}
+```
+
+Fall back to your current screen while the version loads or when the request fails. On a native app you ship every version inside the binary, so the version string picks between code you already have. It cannot download new code.
+
 ## OpenFeature
 
-`VersimoProvider` follows the shape of an OpenFeature server provider. It imports nothing from OpenFeature, so the SDK stays free of dependencies. The flag key is the module slug and the value is the version string.
+`VersimoProvider` follows the shape of an OpenFeature server provider. It imports nothing from OpenFeature, so Versimo stays free of dependencies. The flag key is the module slug and the value is the version string.
 
 ```ts
 import { OpenFeature } from '@openfeature/server-sdk';
@@ -91,7 +127,7 @@ const version = await flags.getStringValue('billing', '2.4.0', { targetingKey: '
 | Module not found | none | `ERROR` with `FLAG_NOT_FOUND` |
 | Source failed | none | `ERROR` with `GENERAL` |
 
-The default value you pass is returned on errors. Boolean, number and object evaluations return `TYPE_MISMATCH`. The provider is asynchronous, so it fits the server SDK. The web SDK expects synchronous providers, so in browsers use the client directly.
+The default value you pass is returned on errors. Boolean, number and object evaluations return `TYPE_MISMATCH`. The provider is asynchronous, so it fits the OpenFeature server package. The OpenFeature web package expects synchronous providers, so in browsers use the client directly.
 
 If your installed OpenFeature version types the provider differently, the provider still works at runtime. A small cast is enough.
 

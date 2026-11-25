@@ -1,0 +1,3181 @@
+{
+  "description": "Language-neutral test vectors for every Versimo port. Generated from Versimo for TypeScript by spec/generate.ts. Do not edit by hand.",
+  "format": 1,
+  "notes": {
+    "transitions": "Each case gives the input record, an op, its args, an optional by, and a fixed now. expected is the output record, or error is the error code.",
+    "resolve": "userId null means no user id. An empty string also means no user.",
+    "validation": "errors lists the field named at the start of each error message, in order."
+  },
+  "bucket": [
+    {
+      "module": "billing",
+      "userId": "user-42",
+      "bucket": 33
+    },
+    {
+      "module": "billing",
+      "userId": "alice",
+      "bucket": 33
+    },
+    {
+      "module": "billing",
+      "userId": "bob",
+      "bucket": 22
+    },
+    {
+      "module": "billing",
+      "userId": "",
+      "bucket": 56
+    },
+    {
+      "module": "",
+      "userId": "user-42",
+      "bucket": 35
+    },
+    {
+      "module": "",
+      "userId": "",
+      "bucket": 3
+    },
+    {
+      "module": "sign-in",
+      "userId": "user-42",
+      "bucket": 84
+    },
+    {
+      "module": "search",
+      "userId": "user-42",
+      "bucket": 45
+    },
+    {
+      "module": "checkout",
+      "userId": "user-42",
+      "bucket": 92
+    },
+    {
+      "module": "a",
+      "userId": "b",
+      "bucket": 1
+    },
+    {
+      "module": "a-b",
+      "userId": "c",
+      "bucket": 29
+    },
+    {
+      "module": "a",
+      "userId": "b-c",
+      "bucket": 85
+    },
+    {
+      "module": "billing",
+      "userId": "0",
+      "bucket": 41
+    },
+    {
+      "module": "billing",
+      "userId": "123456",
+      "bucket": 51
+    },
+    {
+      "module": "billing",
+      "userId": "user\n",
+      "bucket": 6
+    },
+    {
+      "module": "billing",
+      "userId": " user",
+      "bucket": 36
+    },
+    {
+      "module": "billing",
+      "userId": "a\u0000b",
+      "bucket": 51
+    },
+    {
+      "module": "billing",
+      "userId": "é",
+      "bucket": 4
+    },
+    {
+      "module": "billing",
+      "userId": "é",
+      "bucket": 71
+    },
+    {
+      "module": "billing",
+      "userId": "ß",
+      "bucket": 91
+    },
+    {
+      "module": "billing",
+      "userId": "😀",
+      "bucket": 2
+    },
+    {
+      "module": "billing",
+      "userId": "👨‍👩‍👧",
+      "bucket": 99
+    },
+    {
+      "module": "billing",
+      "userId": "🇬🇧",
+      "bucket": 93
+    },
+    {
+      "module": "billing",
+      "userId": "日本語",
+      "bucket": 40
+    },
+    {
+      "module": "billing",
+      "userId": "用户-123",
+      "bucket": 23
+    },
+    {
+      "module": "billing",
+      "userId": "Привет",
+      "bucket": 20
+    },
+    {
+      "module": "billing",
+      "userId": "مرحبا",
+      "bucket": 63
+    },
+    {
+      "module": "billing",
+      "userId": "􏿿",
+      "bucket": 8
+    },
+    {
+      "module": "billing",
+      "userId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "bucket": 68
+    },
+    {
+      "module": "billing",
+      "userId": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+      "bucket": 32
+    },
+    {
+      "module": "sign-in",
+      "userId": "日本語",
+      "bucket": 87
+    },
+    {
+      "module": "search",
+      "userId": "😀",
+      "bucket": 61
+    },
+    {
+      "module": "é",
+      "userId": "user-42",
+      "bucket": 54
+    },
+    {
+      "module": "billing",
+      "userId": "user-0",
+      "bucket": 13
+    },
+    {
+      "module": "billing",
+      "userId": "user-1",
+      "bucket": 2
+    },
+    {
+      "module": "billing",
+      "userId": "user-2",
+      "bucket": 67
+    },
+    {
+      "module": "billing",
+      "userId": "user-3",
+      "bucket": 96
+    },
+    {
+      "module": "billing",
+      "userId": "user-4",
+      "bucket": 60
+    },
+    {
+      "module": "billing",
+      "userId": "user-5",
+      "bucket": 23
+    },
+    {
+      "module": "billing",
+      "userId": "user-6",
+      "bucket": 59
+    },
+    {
+      "module": "billing",
+      "userId": "user-7",
+      "bucket": 31
+    },
+    {
+      "module": "billing",
+      "userId": "user-8",
+      "bucket": 55
+    },
+    {
+      "module": "billing",
+      "userId": "user-9",
+      "bucket": 78
+    }
+  ],
+  "resolve": [
+    {
+      "name": "rollout 50, user-0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-0",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 13
+      }
+    },
+    {
+      "name": "rollout 50, user-1",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 2
+      }
+    },
+    {
+      "name": "rollout 50, user-2",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-2",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 67
+      }
+    },
+    {
+      "name": "rollout 50, user-3",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-3",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 96
+      }
+    },
+    {
+      "name": "rollout 50, user-4",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-4",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 60
+      }
+    },
+    {
+      "name": "rollout 50, user-5",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-5",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 23
+      }
+    },
+    {
+      "name": "rollout 50, user-6",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-6",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 59
+      }
+    },
+    {
+      "name": "rollout 50, user-7",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-7",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 31
+      }
+    },
+    {
+      "name": "rollout 50, user-8",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-8",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 55
+      }
+    },
+    {
+      "name": "rollout 50, user-9",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-9",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 78
+      }
+    },
+    {
+      "name": "rollout 50, user-10",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-10",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 78
+      }
+    },
+    {
+      "name": "rollout 50, user-11",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 50,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-11",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 68
+      }
+    },
+    {
+      "name": "rollout 0 never reaches next",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 2
+      }
+    },
+    {
+      "name": "rollout 100 always reaches next",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 2
+      }
+    },
+    {
+      "name": "rollout 100 with unicode id",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "日本語",
+      "expected": {
+        "version": "2.5.0",
+        "channel": "next",
+        "reason": "ROLLOUT",
+        "bucket": 40
+      }
+    },
+    {
+      "name": "no next, rollout 0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 2
+      }
+    },
+    {
+      "name": "no last, no next",
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "DEFAULT",
+        "bucket": 2
+      }
+    },
+    {
+      "name": "no user id (null)",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": null,
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "NO_USER",
+        "bucket": null
+      }
+    },
+    {
+      "name": "empty user id",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "NO_USER",
+        "bucket": null
+      }
+    },
+    {
+      "name": "unhealthy falls back to last",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.3.1",
+        "channel": "last",
+        "reason": "UNHEALTHY",
+        "bucket": null
+      }
+    },
+    {
+      "name": "unhealthy beats rollout 100",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.3.1",
+        "channel": "last",
+        "reason": "UNHEALTHY",
+        "bucket": null
+      }
+    },
+    {
+      "name": "unhealthy with no last stays on current",
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": "user-1",
+      "expected": {
+        "version": "2.4.0",
+        "channel": "current",
+        "reason": "UNHEALTHY",
+        "bucket": null
+      }
+    },
+    {
+      "name": "unhealthy with no user",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "userId": null,
+      "expected": {
+        "version": "2.3.1",
+        "channel": "last",
+        "reason": "UNHEALTHY",
+        "bucket": null
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "name": "promote",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0",
+            "by": "alex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote without by",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote clears unhealthy",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote appends to history",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          }
+        ]
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          },
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0",
+            "by": "alex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote with no last",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote with empty next",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "promote keeps $schema",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "$schema": "https://versimo.dev/schema/module-record.schema.json"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "$schema": "https://versimo.dev/schema/module-record.schema.json",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rollback",
+      "op": "rollback",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "expected": {
+        "module": "billing",
+        "last": null,
+        "current": "2.3.1",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollback",
+            "from": "2.4.0",
+            "to": "2.3.1",
+            "by": "alex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rollback clears unhealthy",
+      "op": "rollback",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": null,
+        "current": "2.3.1",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollback",
+            "from": "2.4.0",
+            "to": "2.3.1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rollback without last",
+      "op": "rollback",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "rollback appends to history",
+      "op": "rollback",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          }
+        ]
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": null,
+        "current": "2.3.1",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          },
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollback",
+            "from": "2.4.0",
+            "to": "2.3.1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "setRollout 25",
+      "op": "setRollout",
+      "args": {
+        "n": 25
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 25,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollout",
+            "from": "10",
+            "to": "25",
+            "by": "alex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "setRollout 100",
+      "op": "setRollout",
+      "args": {
+        "n": 100
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollout",
+            "from": "10",
+            "to": "100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "setRollout 0",
+      "op": "setRollout",
+      "args": {
+        "n": 0
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollout",
+            "from": "10",
+            "to": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "setRollout 0 with no next",
+      "op": "setRollout",
+      "args": {
+        "n": 0
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollout",
+            "from": "0",
+            "to": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "setRollout above 0 with no next",
+      "op": "setRollout",
+      "args": {
+        "n": 5
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "setRollout 101",
+      "op": "setRollout",
+      "args": {
+        "n": 101
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "setRollout -1",
+      "op": "setRollout",
+      "args": {
+        "n": -1
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "setRollout 1.5",
+      "op": "setRollout",
+      "args": {
+        "n": 1.5
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "setRollout appends to history",
+      "op": "setRollout",
+      "args": {
+        "n": 40
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          }
+        ]
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 40,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          },
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollout",
+            "from": "10",
+            "to": "40"
+          }
+        ]
+      }
+    },
+    {
+      "name": "draftNext",
+      "op": "draftNext",
+      "args": {
+        "version": "2.6.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.6.0",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "draft",
+            "from": "2.4.0",
+            "to": "2.6.0",
+            "by": "alex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "draftNext replaces next and resets rollout",
+      "op": "draftNext",
+      "args": {
+        "version": "2.7.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.7.0",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "draft",
+            "from": "2.5.0",
+            "to": "2.7.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "draftNext patch",
+      "op": "draftNext",
+      "args": {
+        "version": "2.4.1",
+        "patch": true
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "health-check",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.4.1",
+        "rollout": 0,
+        "healthy": false,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "patch",
+            "from": "2.5.0",
+            "to": "2.4.1",
+            "by": "health-check"
+          }
+        ]
+      }
+    },
+    {
+      "name": "draftNext prerelease above current",
+      "op": "draftNext",
+      "args": {
+        "version": "2.5.0-beta.1"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0-beta.1",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "draft",
+            "from": "2.4.0",
+            "to": "2.5.0-beta.1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "draftNext equal to current",
+      "op": "draftNext",
+      "args": {
+        "version": "2.4.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "draftNext below current",
+      "op": "draftNext",
+      "args": {
+        "version": "2.3.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "draftNext prerelease of current",
+      "op": "draftNext",
+      "args": {
+        "version": "2.4.0-rc.1"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "draftNext not semver",
+      "op": "draftNext",
+      "args": {
+        "version": "v2.6.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "draftNext empty",
+      "op": "draftNext",
+      "args": {
+        "version": ""
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "draftNext appends to history",
+      "op": "draftNext",
+      "args": {
+        "version": "3.0.0"
+      },
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          }
+        ]
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "3.0.0",
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": "sam"
+          },
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "draft",
+            "from": "2.5.0",
+            "to": "3.0.0"
+          }
+        ]
+      }
+    }
+  ],
+  "validation": [
+    {
+      "name": "valid",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid with no last and no next",
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid with $schema and history",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "$schema": "x",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          },
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": null,
+            "to": "2.4.0",
+            "by": "alex"
+          }
+        ]
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid with empty history",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": []
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid prerelease and build",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0-rc.1+build.5",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid rollout 0 and 100",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 100,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "valid offset date",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00.123+01:00"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "null",
+      "record": null,
+      "ok": false,
+      "errors": [
+        "record"
+      ]
+    },
+    {
+      "name": "array",
+      "record": [],
+      "ok": false,
+      "errors": [
+        "record"
+      ]
+    },
+    {
+      "name": "string",
+      "record": "billing",
+      "ok": false,
+      "errors": [
+        "record"
+      ]
+    },
+    {
+      "name": "number",
+      "record": 7,
+      "ok": false,
+      "errors": [
+        "record"
+      ]
+    },
+    {
+      "name": "empty object",
+      "record": {},
+      "ok": false,
+      "errors": [
+        "module",
+        "last",
+        "current",
+        "next",
+        "rollout",
+        "healthy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "unknown key",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "extra": 1
+      },
+      "ok": false,
+      "errors": [
+        "extra"
+      ]
+    },
+    {
+      "name": "missing module",
+      "record": {
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "missing last",
+      "record": {
+        "module": "billing",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "last"
+      ]
+    },
+    {
+      "name": "missing next",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "missing history is fine",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "$schema not a string",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "$schema": 3
+      },
+      "ok": false,
+      "errors": [
+        "$schema"
+      ]
+    },
+    {
+      "name": "module upper case",
+      "record": {
+        "module": "Billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module empty",
+      "record": {
+        "module": "",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module with trailing newline",
+      "record": {
+        "module": "billing\n",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module with underscore",
+      "record": {
+        "module": "sign_in",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module with leading hyphen",
+      "record": {
+        "module": "-billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module with double hyphen",
+      "record": {
+        "module": "a--b",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "module not a string",
+      "record": {
+        "module": 5,
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "module"
+      ]
+    },
+    {
+      "name": "current with leading zero",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "02.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "current two parts",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "current with v prefix",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "v2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "current with trailing newline",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0\n",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "current with empty prerelease",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0-",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "current null",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": null,
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "last not semver",
+      "record": {
+        "module": "billing",
+        "last": "old",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "last"
+      ]
+    },
+    {
+      "name": "next not semver",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "1",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "prerelease numeric with leading zero",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0-01",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "unicode digits are not digits",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "٢.٤.٠",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "current"
+      ]
+    },
+    {
+      "name": "rollout 101",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 101,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "rollout -1",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": -1,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "rollout 1.5",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 1.5,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "rollout string",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": "10",
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "rollout true",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": true,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "rollout null",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": null,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "healthy string",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": "true",
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "healthy"
+      ]
+    },
+    {
+      "name": "healthy missing",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "healthy"
+      ]
+    },
+    {
+      "name": "updatedAt date only",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt without zone",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt with space",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12 09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt month 13",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-13-01T00:00:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt day 32",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-01-32T00:00:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt hour 25",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T25:00:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt minute 60",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:60:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt second 60",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:60Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt 24:00:00 is accepted",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T24:00:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "updatedAt 24:00:01",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T24:00:01Z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt offset +23:59",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00+23:59"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "updatedAt offset +24:00",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00+24:00"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt offset minutes 60",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00+00:60"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt day 30 of February is accepted",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-02-30T00:00:00Z"
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "updatedAt with trailing newline",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z\n"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt lower case z",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00z"
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt number",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": 1773307800
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "updatedAt missing",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true
+      },
+      "ok": false,
+      "errors": [
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "history not an array",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": {}
+      },
+      "ok": false,
+      "errors": [
+        "history"
+      ]
+    },
+    {
+      "name": "history entry not an object",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          1
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0]"
+      ]
+    },
+    {
+      "name": "history entry unknown key",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "why": "x"
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].why"
+      ]
+    },
+    {
+      "name": "history entry bad date",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "yesterday",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].at"
+      ]
+    },
+    {
+      "name": "history entry bad action",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "delete",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].action"
+      ]
+    },
+    {
+      "name": "history entry from a number",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": 2,
+            "to": "2.4.0"
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].from"
+      ]
+    },
+    {
+      "name": "history entry to missing",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "draft",
+            "from": null
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].to"
+      ]
+    },
+    {
+      "name": "history entry by a number",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "by": 7
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].by"
+      ]
+    },
+    {
+      "name": "history second entry bad",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          },
+          {
+            "at": "y",
+            "action": "x",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[1].at",
+        "history[1].action"
+      ]
+    },
+    {
+      "name": "next equal to current",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.4.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "next below current",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.3.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "next prerelease of current",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.4.0-rc.1",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "next"
+      ]
+    },
+    {
+      "name": "last equal to current",
+      "record": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "last"
+      ]
+    },
+    {
+      "name": "last above current",
+      "record": {
+        "module": "billing",
+        "last": "3.0.0",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "last"
+      ]
+    },
+    {
+      "name": "rollout above 0 with no next",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": null,
+        "rollout": 5,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    },
+    {
+      "name": "several errors at once",
+      "record": {
+        "module": "X",
+        "last": 1,
+        "current": "x",
+        "next": 2,
+        "rollout": 200,
+        "healthy": 0,
+        "updatedAt": "no",
+        "extra": true
+      },
+      "ok": false,
+      "errors": [
+        "extra",
+        "module",
+        "last",
+        "current",
+        "next",
+        "rollout",
+        "healthy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "ordering is skipped when fields are invalid",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "1.0.0",
+        "rollout": "x",
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "ok": false,
+      "errors": [
+        "rollout"
+      ]
+    }
+  ],
+  "semver": {
+    "compare": [
+      {
+        "a": "1.0.0",
+        "b": "1.0.0",
+        "expected": 0
+      },
+      {
+        "a": "1.0.0",
+        "b": "2.0.0",
+        "expected": -1
+      },
+      {
+        "a": "2.0.0",
+        "b": "1.0.0",
+        "expected": 1
+      },
+      {
+        "a": "2.0.0",
+        "b": "1.0.0",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0",
+        "b": "2.0.0",
+        "expected": -1
+      },
+      {
+        "a": "1.2.0",
+        "b": "1.10.0",
+        "expected": -1
+      },
+      {
+        "a": "1.10.0",
+        "b": "1.2.0",
+        "expected": 1
+      },
+      {
+        "a": "1.0.9",
+        "b": "1.0.10",
+        "expected": -1
+      },
+      {
+        "a": "1.0.10",
+        "b": "1.0.9",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-alpha",
+        "b": "1.0.0",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0",
+        "b": "1.0.0-alpha",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0",
+        "b": "1.0.0-alpha",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-alpha",
+        "b": "1.0.0",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-alpha",
+        "b": "1.0.0-alpha.1",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-alpha.1",
+        "b": "1.0.0-alpha",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-alpha.1",
+        "b": "1.0.0-alpha.beta",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-alpha.beta",
+        "b": "1.0.0-alpha.1",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-alpha.beta",
+        "b": "1.0.0-beta",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-beta",
+        "b": "1.0.0-alpha.beta",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-beta",
+        "b": "1.0.0-beta.2",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-beta.2",
+        "b": "1.0.0-beta",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-beta.2",
+        "b": "1.0.0-beta.11",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-beta.11",
+        "b": "1.0.0-beta.2",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-beta.11",
+        "b": "1.0.0-rc.1",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-rc.1",
+        "b": "1.0.0-beta.11",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-rc.1",
+        "b": "1.0.0",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0",
+        "b": "1.0.0-rc.1",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-1",
+        "b": "1.0.0-a",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0-a",
+        "b": "1.0.0-1",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-a",
+        "b": "1.0.0-B",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0-B",
+        "b": "1.0.0-a",
+        "expected": -1
+      },
+      {
+        "a": "1.0.0+build.1",
+        "b": "1.0.0+build.2",
+        "expected": 0
+      },
+      {
+        "a": "1.0.0+build.2",
+        "b": "1.0.0+build.1",
+        "expected": 0
+      },
+      {
+        "a": "1.0.0-rc.1+a",
+        "b": "1.0.0-rc.1+b",
+        "expected": 0
+      },
+      {
+        "a": "1.0.0-rc.1+b",
+        "b": "1.0.0-rc.1+a",
+        "expected": 0
+      },
+      {
+        "a": "0.0.0",
+        "b": "0.0.1",
+        "expected": -1
+      },
+      {
+        "a": "0.0.1",
+        "b": "0.0.0",
+        "expected": 1
+      },
+      {
+        "a": "99999999999999999999.0.0",
+        "b": "1.0.0",
+        "expected": 1
+      },
+      {
+        "a": "1.0.0",
+        "b": "99999999999999999999.0.0",
+        "expected": -1
+      }
+    ],
+    "valid": [
+      {
+        "value": "0.0.0",
+        "valid": true
+      },
+      {
+        "value": "1.2.3",
+        "valid": true
+      },
+      {
+        "value": "10.20.30",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-alpha",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-alpha.1",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-0.3.7",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-x.7.z.92",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-x-y-z.--",
+        "valid": true
+      },
+      {
+        "value": "1.0.0+20130313144700",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-beta+exp.sha.5114f85",
+        "valid": true
+      },
+      {
+        "value": "1.0.0+21AF26D3--117B344092BD",
+        "valid": true
+      },
+      {
+        "value": "1.0.0-0A.is.legal",
+        "valid": true
+      },
+      {
+        "value": "",
+        "valid": false
+      },
+      {
+        "value": "1",
+        "valid": false
+      },
+      {
+        "value": "1.2",
+        "valid": false
+      },
+      {
+        "value": "1.2.3.4",
+        "valid": false
+      },
+      {
+        "value": "01.2.3",
+        "valid": false
+      },
+      {
+        "value": "1.02.3",
+        "valid": false
+      },
+      {
+        "value": "1.2.03",
+        "valid": false
+      },
+      {
+        "value": "v1.2.3",
+        "valid": false
+      },
+      {
+        "value": "1.2.3-",
+        "valid": false
+      },
+      {
+        "value": "1.2.3+",
+        "valid": false
+      },
+      {
+        "value": "1.2.3-01",
+        "valid": false
+      },
+      {
+        "value": "1.2.3-a..b",
+        "valid": false
+      },
+      {
+        "value": "1.2.3-a.",
+        "valid": false
+      },
+      {
+        "value": "1.2.3+a..b",
+        "valid": false
+      },
+      {
+        "value": "1.2.3-é",
+        "valid": false
+      },
+      {
+        "value": " 1.2.3",
+        "valid": false
+      },
+      {
+        "value": "1.2.3 ",
+        "valid": false
+      },
+      {
+        "value": "1.2.3\n",
+        "valid": false
+      },
+      {
+        "value": "1.2.-3",
+        "valid": false
+      },
+      {
+        "value": "١.٢.٣",
+        "valid": false
+      }
+    ]
+  }
+}

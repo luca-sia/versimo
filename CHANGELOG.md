@@ -2,6 +2,14 @@
 
 All notable changes are listed here. This project follows [semver](https://semver.org).
 
+## 0.2.0
+
+- Versimo for Python, Go, Kotlin and Swift, in `packages/`
+- Shared language-neutral test vectors in `spec/vectors.json`, generated from the TypeScript code with `npm run spec:generate`
+- `bucketFor` works on engines without `TextEncoder`, such as older React Native
+- Docs for React Native and for porting to other languages
+- A release workflow that publishes to npm with provenance
+
 ## 0.1.0
 
 First release.

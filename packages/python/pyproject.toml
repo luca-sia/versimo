@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "versimo"
+version = "0.2.0"
+description = "Release model with no staging. Resolve last, current and next versions of a module for each user."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Lucasia Ltd" }]
+keywords = ["release", "rollout", "feature-flags", "versioning"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://versimo.dev"
+Repository = "https://github.com/luca-sia/versimo"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/versimo"]

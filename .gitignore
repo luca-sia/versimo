@@ -3,3 +3,9 @@ dist/
 *.tgz
 *.log
 .DS_Store
+__pycache__/
+*.egg-info/
+.gradle/
+build/
+.build/
+.swiftpm/

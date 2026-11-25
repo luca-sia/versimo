@@ -13,4 +13,4 @@ body:
     id: idea
     attributes:
       label: Your idea
-      description: How might it work? Keep it small. The SDK aims to stay simple.
+      description: How might it work? Keep it small. Versimo aims to stay simple.

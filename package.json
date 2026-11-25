@@ -1,6 +1,6 @@
 {
   "name": "versimo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Release model with no staging. Resolve last, current and next versions of a module for each user.",
   "type": "module",
   "license": "MIT",
@@ -39,6 +39,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
+    "spec:generate": "node --import tsx spec/generate.ts",
     "test": "node --import tsx --test test/*.test.ts",
     "prepare": "npm run build"
   },

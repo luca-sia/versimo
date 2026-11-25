@@ -1,12 +1,12 @@
 # Contributing
 
-Thanks for helping. The aim of this SDK is to stay small, with no runtime dependencies. Changes that keep it that way are the easiest to accept.
+Thanks for helping. The aim of this library is to stay small, with no runtime dependencies. Changes that keep it that way are the easiest to accept.
 
 ## Open an issue
 
 Use [GitHub issues](https://github.com/luca-sia/versimo/issues).
 
-- For a bug, say what you did, what you expected and what happened. A short code sample or a record helps a lot. Add the SDK version and your Node version or browser.
+- For a bug, say what you did, what you expected and what happened. A short code sample or a record helps a lot. Add the Versimo version and your Node version or browser.
 - For an idea, describe the problem first, then your suggestion.
 - For a security problem, do not open an issue. Follow [SECURITY.md](SECURITY.md).
 
@@ -33,6 +33,14 @@ For anything bigger than a small fix, open an issue first so we can agree on the
 6. Push your branch and open a pull request. Fill in the short template: what, why and how you tested.
 
 Signed-off commits are not required. Keep commits focused and write messages in plain words.
+
+## Other languages
+
+The ports live in `packages/`. Each has its own tests, which read `spec/vectors.json`. A change to the TypeScript behaviour starts with `npm run spec:generate`, then every port has to pass the new vectors. See [docs/porting.md](docs/porting.md).
+
+## Releases
+
+A maintainer bumps `version` in `package.json` and adds a `CHANGELOG.md` entry, then publishes a GitHub release. The release workflow runs the tests and publishes the TypeScript package to npm with provenance, through npm trusted publishing. No token is stored. The other languages are installed from the repository for now.
 
 ## Style
 

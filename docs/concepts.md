@@ -43,7 +43,7 @@ Promote when next has run on live for long enough and looks good.
 
 ## Health and rollback
 
-Your health checks decide whether current is healthy. The SDK does not run checks. Your tooling sets `healthy` to `false` on the record.
+Your health checks decide whether current is healthy. Versimo does not run checks. Your tooling sets `healthy` to `false` on the record.
 
 While `healthy` is `false`, every user gets last. This is the automatic step back and it needs no deploy. If there is no last, users stay on current, because there is nothing better to serve.
 

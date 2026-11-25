@@ -1,13 +1,13 @@
-# Versimo SDK
+# Versimo
 
 A release model with no staging.
 
 Every module of your product (billing, sign-in, search) has three versions: **last**, **current** and **next**. Next is user acceptance testing on live, behind a flag that reaches a percentage of your users. When next is good, you promote it. Next becomes current and current becomes last. If current fails its health checks, users go back to last on their own, and the fix ships as a semver patch.
 
-This SDK is the small, dependency-free piece that answers one question: which version of this module should this user get?
+Versimo is the small, dependency-free library that answers one question: which version of this module should this user get?
 
-- TypeScript, ESM, zero runtime dependencies
-- Node 20 and later, and modern browsers
+- Ports for TypeScript, Python, Go, Kotlin and Swift, all with zero runtime dependencies
+- Node 20 and later, modern browsers and React Native
 - Deterministic bucketing, so a user stays on the same version as the rollout grows
 - Pure functions for promote, rollback, rollout and draft
 - A hand-written record validator and a JSON Schema
@@ -15,7 +15,23 @@ This SDK is the small, dependency-free piece that answers one question: which ve
 
 Site: [versimo.dev](https://versimo.dev)
 
+## Languages
+
+Every port gives the same answer for the same record and user. They are checked against the same [test vectors](spec/vectors.json).
+
+| Language | Package | Install | Docs |
+| --- | --- | --- | --- |
+| TypeScript and JavaScript, including React Native | Versimo for TypeScript | `npm install versimo` | This page |
+| Python 3.10 and later | Versimo for Python | `pip install "git+https://github.com/luca-sia/versimo#subdirectory=packages/python"` | [packages/python](packages/python/README.md) |
+| Go 1.22 and later | Versimo for Go | `go get github.com/luca-sia/versimo/packages/go` | [packages/go](packages/go/README.md) |
+| Kotlin and Android | Versimo for Kotlin | Build from source with `gradle publishToMavenLocal`. Not on Maven Central or JitPack yet | [packages/kotlin](packages/kotlin/README.md) |
+| Swift and iOS | Versimo for Swift | SwiftPM URL `https://github.com/luca-sia/versimo` | [packages/swift](packages/swift/README.md) |
+
+Writing another port? See [docs/porting.md](docs/porting.md).
+
 ## Install
+
+The rest of this page uses TypeScript.
 
 ```sh
 npm install versimo
@@ -77,7 +93,8 @@ The full format is in [docs/record-format.md](docs/record-format.md). The JSON S
 ## Docs
 
 - [Concepts](docs/concepts.md): the model in plain words
-- [Usage](docs/usage.md): server, browser, React, OpenFeature and PostHog
+- [Usage](docs/usage.md): server, browser, React, React Native, OpenFeature and PostHog
+- [Porting](docs/porting.md): the algorithm and the test vectors, for new languages
 - [Record format](docs/record-format.md)
 - [API reference](docs/api.md)
 - [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md)
