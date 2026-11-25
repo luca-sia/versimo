@@ -1,7 +1,8 @@
-import type { AuditEntry, Identity, Project, Store, StoredModule, User } from './store.js';
+import type { AuditEntry, GithubLink, Identity, Project, Store, StoredModule, User } from './store.js';
 
 interface ProjectRow extends Project {
   ownerId: string;
+  github?: GithubLink | null;
 }
 
 /** An in-memory Store for tests and local runs. Same rules as the Postgres one. */
@@ -59,6 +60,37 @@ export class MemoryStore implements Store {
     return true;
   }
 
+  async getGithub(ownerId: string, projectId: string): Promise<GithubLink | null> {
+    const row = this.projects.get(projectId);
+    return row && row.ownerId === ownerId && row.github ? { ...row.github } : null;
+  }
+
+  async setGithub(ownerId: string, projectId: string, link: GithubLink | null): Promise<boolean> {
+    const row = this.projects.get(projectId);
+    if (!row || row.ownerId !== ownerId) return false;
+    row.github = link ? { ...link } : null;
+    row.updatedAt = new Date().toISOString();
+    return true;
+  }
+
+  async projectsForRepo(installationId: number, repo: string): Promise<string[]> {
+    const key = repo.toLowerCase();
+    return [...this.projects.values()]
+      .filter((p) => p.github?.installationId === installationId && p.github.repo?.toLowerCase() === key)
+      .map((p) => p.id);
+  }
+
+  async clearInstallation(installationId: number): Promise<number> {
+    let n = 0;
+    for (const p of this.projects.values()) {
+      if (p.github?.installationId === installationId) {
+        p.github = null;
+        n += 1;
+      }
+    }
+    return n;
+  }
+
   async listModules(projectId: string): Promise<StoredModule[]> {
     return [...(this.modules.get(projectId)?.values() ?? [])]
       .sort((a, b) => a.module.localeCompare(b.module))
@@ -95,6 +127,6 @@ export class MemoryStore implements Store {
   }
 }
 
-function strip({ ownerId: _, ...project }: ProjectRow): Project {
+function strip({ ownerId: _, github: __, ...project }: ProjectRow): Project {
   return { ...project };
 }

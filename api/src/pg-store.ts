@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 
-import type { AuditEntry, Identity, Project, Store, StoredModule, User } from './store.js';
+import type { AuditEntry, GithubLink, Identity, Project, Store, StoredModule, User } from './store.js';
 
 type Sql = postgres.Sql;
 
@@ -81,6 +81,38 @@ export class PgStore implements Store {
     return rows.length > 0;
   }
 
+  async getGithub(ownerId: string, projectId: string): Promise<GithubLink | null> {
+    const [row] = await this.sql`
+      select github_installation_id, github_repo from projects
+      where id = ${projectId} and owner_id = ${ownerId} and github_installation_id is not null`;
+    return row ? { installationId: Number(row.github_installation_id), repo: row.github_repo } : null;
+  }
+
+  async setGithub(ownerId: string, projectId: string, link: GithubLink | null): Promise<boolean> {
+    const rows = await this.sql`
+      update projects set github_installation_id = ${link?.installationId ?? null},
+        github_repo = ${link?.repo ?? null}, updated_at = now()
+      where id = ${projectId} and owner_id = ${ownerId}
+      returning id`;
+    return rows.length > 0;
+  }
+
+  async projectsForRepo(installationId: number, repo: string): Promise<string[]> {
+    const rows = await this.sql`
+      select id from projects
+      where github_installation_id = ${installationId} and lower(github_repo) = lower(${repo})
+      order by created_at, id`;
+    return rows.map((r) => r.id as string);
+  }
+
+  async clearInstallation(installationId: number): Promise<number> {
+    const rows = await this.sql`
+      update projects set github_installation_id = null, github_repo = null, updated_at = now()
+      where github_installation_id = ${installationId}
+      returning id`;
+    return rows.length;
+  }
+
   async listModules(projectId: string): Promise<StoredModule[]> {
     const rows = await this.sql`
       select module, last, current, next, rollout, healthy, updated_at from modules
@@ -88,7 +120,7 @@ export class PgStore implements Store {
     return rows.map(toModule);
   }
 
-  async createModule(projectId: string, m: StoredModule, entry: AuditEntry, byUser: string): Promise<boolean> {
+  async createModule(projectId: string, m: StoredModule, entry: AuditEntry, byUser: string | null): Promise<boolean> {
     return this.sql.begin(async (tx) => {
       const rows = await tx`
         insert into modules (project_id, module, last, current, next, rollout, healthy, updated_at)
@@ -133,7 +165,7 @@ export class PgStore implements Store {
   }
 }
 
-async function insertEntries(tx: postgres.TransactionSql, projectId: string, entries: AuditEntry[], byUser: string) {
+async function insertEntries(tx: postgres.TransactionSql, projectId: string, entries: AuditEntry[], byUser: string | null) {
   for (const e of entries) {
     await tx`
       insert into history (project_id, module, at, action, from_version, to_version, by_user, by_name)
