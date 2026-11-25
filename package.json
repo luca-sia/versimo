@@ -25,12 +25,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./github": {
+      "types": "./dist/github/index.d.ts",
+      "default": "./dist/github/index.js"
+    },
     "./schema": "./schema/module-record.schema.json",
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "schema",
+    "github-app",
     "docs",
     "README.md",
     "CHANGELOG.md",

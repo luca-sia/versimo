@@ -97,6 +97,7 @@ The full format is in [docs/record-format.md](docs/record-format.md). The JSON S
 - [Porting](docs/porting.md): the algorithm and the test vectors, for new languages
 - [Record format](docs/record-format.md)
 - [API reference](docs/api.md)
+- [GitHub app](docs/github-app.md): connect a repo, modules from tags, pull requests with auto merge
 - [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md)
 
 ## Licence
