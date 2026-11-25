@@ -9,7 +9,7 @@ private val DATE_TIME = Regex(
 )
 private val ACTIONS = listOf("draft", "promote", "rollback", "rollout", "patch")
 private val KEYS = setOf("\$schema", "module", "last", "current", "next", "rollout", "healthy", "updatedAt", "history")
-private val ENTRY_KEYS = setOf("at", "action", "from", "to", "by")
+private val ENTRY_KEYS = setOf("at", "action", "from", "to", "by", "reason")
 
 private fun isDateTime(v: Any?): Boolean {
     if (v !is String) return false
@@ -47,6 +47,7 @@ private fun checkEntry(entry: Any?, path: String, errors: MutableList<String>) {
         if (!entry.containsKey(key) || (v != null && v !is String)) errors.add("$path.$key must be a string or null")
     }
     if (entry.containsKey("by") && entry["by"] !is String) errors.add("$path.by must be a string")
+    if (entry.containsKey("reason") && entry["reason"] !is String) errors.add("$path.reason must be a string")
 }
 
 /**

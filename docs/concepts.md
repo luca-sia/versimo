@@ -43,7 +43,9 @@ Promote when next has run on live for long enough and looks good.
 
 ## Health and rollback
 
-Your health checks decide whether current is healthy. Versimo does not run checks. Your tooling sets `healthy` to `false` on the record.
+Each module can have health checks: an error rate, a latency and a custom URL. When current fails one, Versimo rolls back to last on its own, records the failed checks in the history, and sends an alert. See [Health checks](health.md).
+
+You can also set `healthy` to `false` on the record from your own tooling.
 
 While `healthy` is `false`, every user gets last. This is the automatic step back and it needs no deploy. If there is no last, users stay on current, because there is nothing better to serve.
 

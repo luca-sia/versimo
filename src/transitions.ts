@@ -24,6 +24,7 @@ function apply(
   const at = stamp(opts);
   const entry: HistoryEntry = { at, action, from, to };
   if (opts.by !== undefined) entry.by = opts.by;
+  if (opts.reason !== undefined) entry.reason = opts.reason;
   return { ...record, ...changes, updatedAt: at, history: [...(record.history ?? []), entry] };
 }
 

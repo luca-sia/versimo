@@ -11,7 +11,7 @@ private let dateTimeRegex = try! NSRegularExpression(
 )
 private let actions = ["draft", "promote", "rollback", "rollout", "patch"]
 private let keys: Set<String> = ["$schema", "module", "last", "current", "next", "rollout", "healthy", "updatedAt", "history"]
-private let entryKeys: Set<String> = ["at", "action", "from", "to", "by"]
+private let entryKeys: Set<String> = ["at", "action", "from", "to", "by", "reason"]
 
 private func isDateTime(_ v: JSONValue?) -> Bool {
     guard case .string(let s)? = v, let g = fullMatch(dateTimeRegex, s) else { return false }
@@ -54,6 +54,7 @@ private func checkEntry(_ entry: JSONValue, path: String, errors: inout [String]
         if v == nil || (v != .null && !isString(v)) { errors.append("\(path).\(key) must be a string or null") }
     }
     if let by = e["by"], !isString(by) { errors.append("\(path).by must be a string") }
+    if let reason = e["reason"], !isString(reason) { errors.append("\(path).reason must be a string") }
 }
 
 /// Checks a record by hand. It never throws. Each error names the field.

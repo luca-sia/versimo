@@ -35,7 +35,8 @@
           "action": { "enum": ["draft", "promote", "rollback", "rollout", "patch"] },
           "from": { "type": ["string", "null"] },
           "to": { "type": ["string", "null"] },
-          "by": { "type": "string" }
+          "by": { "type": "string" },
+          "reason": { "description": "Why the change was made, for example health: errorRate.", "type": "string" }
         }
       }
     }

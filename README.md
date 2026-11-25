@@ -10,6 +10,7 @@ Versimo is the small, dependency-free library that answers one question: which v
 - Node 20 and later, modern browsers and React Native
 - Deterministic bucketing, so a user stays on the same version as the rollout grows
 - Pure functions for promote, rollback, rollout and draft
+- Health checks (error rate, latency, a custom URL) with automatic rollback, alerts and PostHog error tracking
 - A hand-written record validator and a JSON Schema
 - An OpenFeature compatible provider, with no OpenFeature import
 
@@ -94,6 +95,7 @@ The full format is in [docs/record-format.md](docs/record-format.md). The JSON S
 
 - [Concepts](docs/concepts.md): the model in plain words
 - [Usage](docs/usage.md): server, browser, React, React Native, OpenFeature and PostHog
+- [Health checks](docs/health.md): automatic rollback, alerts and PostHog
 - [Porting](docs/porting.md): the algorithm and the test vectors, for new languages
 - [Record format](docs/record-format.md)
 - [API reference](docs/api.md)

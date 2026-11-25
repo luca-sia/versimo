@@ -9,7 +9,7 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const ACTIONS = ['draft', 'promote', 'rollback', 'rollout', 'patch'];
 const KEYS = ['$schema', 'module', 'last', 'current', 'next', 'rollout', 'healthy', 'updatedAt', 'history'];
-const ENTRY_KEYS = ['at', 'action', 'from', 'to', 'by'];
+const ENTRY_KEYS = ['at', 'action', 'from', 'to', 'by', 'reason'];
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -35,6 +35,7 @@ function checkEntry(entry: unknown, path: string, errors: string[]): void {
     }
   }
   if (entry.by !== undefined && typeof entry.by !== 'string') errors.push(`${path}.by must be a string`);
+  if (entry.reason !== undefined && typeof entry.reason !== 'string') errors.push(`${path}.reason must be a string`);
 }
 
 /** Checks a record by hand. It never throws. Each error names the field. */

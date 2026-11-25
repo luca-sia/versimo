@@ -11,6 +11,7 @@ The reference is the TypeScript source in `src/`. The shared test data is [spec/
 - `draftNext`, `promote`, `rollback` and `setRollout`
 - `validateRecord`
 - Semver check and compare
+- `evaluateHealth` and `checkHealth`
 - A client with a source (a function, or a URL), a TTL cache and stale-on-error
 
 A PostHog rollout source is optional. If a port has one, `rolloutFromFlag` must pass the `posthog` vectors, and the client applies the share to the record before resolving. PostHog only sets the share. The bucket always decides who is on next.
@@ -57,12 +58,27 @@ Each transition returns a new record, sets `updatedAt` to the time of the change
 | `rollback` | `last = null`, `current = last`, `next = null`, `rollout = 0`, `healthy = true` | `rollback`, current, last |
 | `setRollout(n)` | `rollout = n` | `rollout`, old rollout as text, new rollout as text |
 
+Every transition also takes an optional `reason`. When given, the history entry gets a `reason` key after `by`.
+
 Rules that raise an error:
 
 - `draftNext`: the version is not semver, or is not greater than `current`.
 - `promote`: `next` is null.
 - `rollback`: `last` is null.
 - `setRollout`: `n` is not an integer from 0 to 100, or `n > 0` while `next` is null.
+
+## Health
+
+Checks: `maxErrorRate` (0 to 1), `maxLatencyMs` (0 or more), `url` (non-empty), `minRequests` (integer, default 1). Observation: `requests`, `errors` (integers), `latencyMs` (0 or more), `urlStatus` (integer, 0 for unreachable). A missing key turns the check off or skips it.
+
+1. Reject bad input with `INVALID_INPUT`: a limit out of range, a negative or fractional count, `errors` above `requests`, NaN or infinity.
+2. Error rate: when `maxErrorRate`, `requests` and `errors` are all set and `requests >= max(1, minRequests)`, compute `errors / requests` as a double. It fails when the rate is above the limit.
+3. Latency: fails when `latencyMs` is above `maxLatencyMs`.
+4. URL: fails when `url` is set and `urlStatus` is set and outside 200 to 299. The limit is null.
+5. Failures come in that order, as `{ check, value, limit }`.
+6. `checkHealth`: when the verdict fails and `last` is set, call `rollback` with `by` defaulting to `versimo-health` and `reason` set to `health: ` and the failed check names joined by `, `. Otherwise return the record unchanged with `rolledBack` false.
+
+Limits are inclusive: a value equal to the limit passes. The runner that measures and alerts (`createHealthMonitor`) is TypeScript only for now. Ports need the pure part.
 
 ## Validation
 
@@ -107,6 +123,7 @@ The pattern is the one in `schema/module-record.schema.json`. Compare as the sem
 | `validation` | `name`, `record`, `ok`, `errors` | Agree on `ok` and on the field names, in order |
 | `semver.compare` | `a`, `b`, `expected` | Return -1, 0 or 1 |
 | `semver.valid` | `value`, `valid` | Agree on validity |
+| `health` | `name`, `record`, `checks`, `observation`, `now`, `by`, then `expected` or `error` | Return the same record, verdict and `rolledBack`, or fail with that error code |
 
 For transitions, `op` is `promote`, `rollback`, `setRollout` (with `args.n`) or `draftNext` (with `args.version` and an optional `args.patch`). `now` is a fixed time in UTC with milliseconds. A typed port can skip a case that its types rule out, such as a fractional rollout, as long as the type system rejects it.
 

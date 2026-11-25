@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   bucketFor,
+  checkHealth,
   compareSemver,
   draftNext,
   isSemver,
@@ -41,7 +42,12 @@ test('resolve vectors', () => {
 
 test('transition vectors', () => {
   for (const c of vectors.transitions) {
-    const opts = { now: c.now, ...(c.by === undefined ? {} : { by: c.by }), ...(c.args.patch ? { patch: true } : {}) };
+    const opts = {
+      now: c.now,
+      ...(c.by === undefined ? {} : { by: c.by }),
+      ...(c.reason === undefined ? {} : { reason: c.reason }),
+      ...(c.args.patch ? { patch: true } : {}),
+    };
     const run = (): ModuleRecord => {
       if (c.op === 'promote') return promote(c.record, opts);
       if (c.op === 'rollback') return rollback(c.record, opts);
@@ -75,4 +81,16 @@ test('semver vectors', () => {
 
 test('posthog vectors', () => {
   for (const c of vectors.posthog) assert.equal(rolloutFromFlag(c.flag), c.rollout, c.name);
+});
+
+test('health vectors', () => {
+  for (const c of vectors.health) {
+    const opts = { now: c.now, ...(c.by === undefined ? {} : { by: c.by }) };
+    const run = () => checkHealth(c.record, c.checks, c.observation, opts);
+    if (c.error) {
+      assert.throws(run, (e: VersimoError) => e.code === c.error, c.name);
+    } else {
+      assert.deepEqual(run(), c.expected, c.name);
+    }
+  }
 });

@@ -12,7 +12,7 @@ _DATE_TIME = re.compile(
 )
 _ACTIONS = ["draft", "promote", "rollback", "rollout", "patch"]
 _KEYS = ["$schema", "module", "last", "current", "next", "rollout", "healthy", "updatedAt", "history"]
-_ENTRY_KEYS = ["at", "action", "from", "to", "by"]
+_ENTRY_KEYS = ["at", "action", "from", "to", "by", "reason"]
 _MISSING = object()
 
 
@@ -63,6 +63,8 @@ def _check_entry(entry: Any, path: str, errors: list[str]) -> None:
             errors.append(f"{path}.{key} must be a string or null")
     if "by" in entry and not isinstance(entry["by"], str):
         errors.append(f"{path}.by must be a string")
+    if "reason" in entry and not isinstance(entry["reason"], str):
+        errors.append(f"{path}.reason must be a string")
 
 
 def validate_record(record: Any) -> ValidationResult:

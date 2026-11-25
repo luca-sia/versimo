@@ -18,7 +18,7 @@ func apply(r ModuleRecord, change func(*ModuleRecord), action string, from, to *
 		now = time.Now()
 	}
 	at := now.UTC().Format("2006-01-02T15:04:05.000Z")
-	entry := HistoryEntry{At: at, Action: action, From: from, To: to, By: o.By}
+	entry := HistoryEntry{At: at, Action: action, From: from, To: to, By: o.By, Reason: o.Reason}
 	out := r
 	change(&out)
 	out.UpdatedAt = at

@@ -1,5 +1,6 @@
 import {
   bucketFor,
+  checkHealth,
   compareSemver,
   draftNext,
   isSemver,
@@ -91,12 +92,21 @@ type Op = 'promote' | 'rollback' | 'setRollout' | 'draftNext';
 
 function transitions() {
   const cases: unknown[] = [];
-  const add = (name: string, op: Op, rec: ModuleRecord, args: Record<string, unknown> = {}, by?: string) => {
-    const opts: { now: string; by?: string; patch?: boolean } = { now: NOW };
+  const add = (
+    name: string,
+    op: Op,
+    rec: ModuleRecord,
+    args: Record<string, unknown> = {},
+    by?: string,
+    reason?: string,
+  ) => {
+    const opts: { now: string; by?: string; patch?: boolean; reason?: string } = { now: NOW };
     if (by !== undefined) opts.by = by;
+    if (reason !== undefined) opts.reason = reason;
     if (args.patch) opts.patch = true;
     const c: Record<string, unknown> = { name, op, args, record: rec, now: NOW };
     if (by !== undefined) c.by = by;
+    if (reason !== undefined) c.reason = reason;
     try {
       let out: ModuleRecord;
       if (op === 'promote') out = promote(rec, opts);
@@ -124,6 +134,8 @@ function transitions() {
   add('rollback clears unhealthy', 'rollback', record({ healthy: false, next: null, rollout: 0 }));
   add('rollback without last', 'rollback', record({ last: null }));
   add('rollback appends to history', 'rollback', record({ history: hist }));
+  add('rollback with a reason', 'rollback', record(), {}, 'alex', 'error rate too high');
+  add('promote with a reason', 'promote', record(), {}, undefined, 'UAT signed off');
 
   add('setRollout 25', 'setRollout', record(), { n: 25 }, 'alex');
   add('setRollout 100', 'setRollout', record(), { n: 100 });
@@ -145,6 +157,77 @@ function transitions() {
   add('draftNext not semver', 'draftNext', record(), { version: 'v2.6.0' });
   add('draftNext empty', 'draftNext', record(), { version: '' });
   add('draftNext appends to history', 'draftNext', record({ history: hist }), { version: '3.0.0' });
+  return cases;
+}
+
+function healths() {
+  const cases: Record<string, unknown>[] = [];
+  const add = (
+    name: string,
+    checks: Record<string, unknown>,
+    observation: Record<string, unknown>,
+    rec: ModuleRecord = record(),
+    by?: string,
+  ) => {
+    const c: Record<string, unknown> = { name, record: rec, checks, observation, now: NOW };
+    if (by !== undefined) c.by = by;
+    try {
+      const opts: { now: string; by?: string } = { now: NOW };
+      if (by !== undefined) opts.by = by;
+      c.expected = checkHealth(rec, checks, observation, opts);
+    } catch (err) {
+      if (!(err instanceof VersimoError)) throw err;
+      c.error = err.code;
+    }
+    cases.push(c);
+  };
+  const all = { maxErrorRate: 0.05, maxLatencyMs: 800, url: 'https://billing.example.com/health' };
+
+  add('no checks is healthy', {}, { requests: 100, errors: 100, latencyMs: 9000, urlStatus: 500 });
+  add('all passing', all, { requests: 1000, errors: 50, latencyMs: 800, urlStatus: 204 });
+  add('error rate at the limit passes', { maxErrorRate: 0.05 }, { requests: 20, errors: 1 });
+  add('error rate above the limit rolls back', { maxErrorRate: 0.05 }, { requests: 40, errors: 3 });
+  add('error rate one third', { maxErrorRate: 0.3 }, { requests: 3, errors: 1 });
+  add('error rate limit 0 fails on one error', { maxErrorRate: 0 }, { requests: 1000, errors: 1 });
+  add('error rate limit 1 never fails', { maxErrorRate: 1 }, { requests: 10, errors: 10 });
+  add('error rate skipped below minRequests', { maxErrorRate: 0.05, minRequests: 50 }, { requests: 49, errors: 49 });
+  add('error rate judged at minRequests', { maxErrorRate: 0.05, minRequests: 50 }, { requests: 50, errors: 3 });
+  add('error rate skipped with no requests', { maxErrorRate: 0.05 }, { requests: 0, errors: 0 });
+  add('minRequests 0 still needs one request', { maxErrorRate: 0, minRequests: 0 }, { requests: 0, errors: 0 });
+  add('error rate skipped without errors', { maxErrorRate: 0.05 }, { requests: 100 });
+  add('error rate skipped without requests', { maxErrorRate: 0.05 }, { errors: 5 });
+  add('latency at the limit passes', { maxLatencyMs: 800 }, { latencyMs: 800 });
+  add('latency above the limit rolls back', { maxLatencyMs: 800 }, { latencyMs: 800.5 });
+  add('latency skipped when not measured', { maxLatencyMs: 800 }, { requests: 10 });
+  add('url 200 passes', { url: all.url }, { urlStatus: 200 });
+  add('url 299 passes', { url: all.url }, { urlStatus: 299 });
+  add('url 300 fails', { url: all.url }, { urlStatus: 300 });
+  add('url 199 fails', { url: all.url }, { urlStatus: 199 });
+  add('url 503 fails', { url: all.url }, { urlStatus: 503 });
+  add('url unreachable fails', { url: all.url }, { urlStatus: 0 });
+  add('url skipped when not measured', { url: all.url }, {});
+  add('measured but not checked is ignored', {}, { latencyMs: 5000 });
+  add('every check fails, in order', all, { requests: 10, errors: 9, latencyMs: 2000, urlStatus: 500 });
+  add('failure records by', { maxLatencyMs: 100 }, { latencyMs: 200 }, record(), 'ops-bot');
+  add('failure appends to history', { maxLatencyMs: 100 }, { latencyMs: 200 }, record({
+    history: [{ at: '2026-03-12T09:30:00.000Z', action: 'promote', from: '2.3.1', to: '2.4.0' }],
+  }));
+  add('failure with no last leaves the record', { maxLatencyMs: 100 }, { latencyMs: 200 }, record({ last: null }));
+  add('failure while unhealthy still rolls back', { maxLatencyMs: 100 }, { latencyMs: 200 }, record({ healthy: false }));
+  add('passing leaves an unhealthy record alone', { maxLatencyMs: 100 }, { latencyMs: 50 }, record({ healthy: false }));
+  add('failure drops next and rollout', { maxErrorRate: 0.01 }, { requests: 100, errors: 2 }, record({ rollout: 60 }));
+
+  add('maxErrorRate above 1', { maxErrorRate: 1.5 }, {});
+  add('maxErrorRate below 0', { maxErrorRate: -0.1 }, {});
+  add('maxErrorRate not a number', { maxErrorRate: '0.1' }, {});
+  add('maxLatencyMs below 0', { maxLatencyMs: -1 }, {});
+  add('url empty', { url: '' }, {});
+  add('minRequests fractional', { minRequests: 1.5 }, {});
+  add('requests fractional', {}, { requests: 2.5 });
+  add('errors below 0', {}, { errors: -1 });
+  add('errors above requests', {}, { requests: 1, errors: 2 });
+  add('latencyMs below 0', {}, { latencyMs: -5 });
+  add('urlStatus fractional', {}, { urlStatus: 200.5 });
   return cases;
 }
 
@@ -245,6 +328,8 @@ function validations() {
   add('history entry from a number', record({ history: [entry({ from: 2 })] }));
   add('history entry to missing', record({ history: [{ at: '2026-03-12T09:30:00Z', action: 'draft', from: null }] }));
   add('history entry by a number', record({ history: [entry({ by: 7 })] }));
+  add('history entry with a reason', record({ history: [entry({ action: 'rollback', reason: 'health: errorRate' })] }));
+  add('history entry reason a number', record({ history: [entry({ reason: 7 })] }));
   add('history second entry bad', record({ history: [entry(), entry({ action: 'x', at: 'y' })] }));
 
   add('next equal to current', record({ next: '2.4.0' }));
@@ -337,6 +422,8 @@ export function buildVectors() {
       posthog:
         'flag is one entry of a PostHog /flags?v=2 answer, or null when the flag is absent. rollout is the share on next it gives, or null to keep the record rollout.',
       validation: 'errors lists the field named at the start of each error message, in order.',
+      health:
+        'Each case gives the record, checks, observation, a fixed now and an optional by. expected has the record after the check, the verdict and rolledBack, or error is the error code. A missing key in checks or observation means it is not set.',
     },
     bucket: buckets(),
     resolve: resolves(),
@@ -344,5 +431,6 @@ export function buildVectors() {
     validation: validations(),
     semver: semvers(),
     posthog: posthogFlags(),
+    health: healths(),
   };
 }

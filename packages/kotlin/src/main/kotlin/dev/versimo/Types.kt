@@ -13,6 +13,7 @@ data class HistoryEntry(
     val from: String?,
     val to: String?,
     val by: String? = null,
+    val reason: String? = null,
 )
 
 /** The release state of one module. Records are immutable, so a transition returns a new one. */
@@ -46,6 +47,7 @@ data class ModuleRecord(
                 h["from"] = e.from
                 h["to"] = e.to
                 if (e.by != null) h["by"] = e.by
+                if (e.reason != null) h["reason"] = e.reason
                 h
             }
         }
@@ -67,7 +69,14 @@ data class ModuleRecord(
             val m = value as Map<*, *>
             val history = (m["history"] as List<*>?)?.map { e ->
                 e as Map<*, *>
-                HistoryEntry(e["at"] as String, e["action"] as String, e["from"] as String?, e["to"] as String?, e["by"] as String?)
+                HistoryEntry(
+                    e["at"] as String,
+                    e["action"] as String,
+                    e["from"] as String?,
+                    e["to"] as String?,
+                    e["by"] as String?,
+                    e["reason"] as String?,
+                )
             }
             return ModuleRecord(
                 module = m["module"] as String,
@@ -94,5 +103,8 @@ data class ModuleRecord(
     }
 }
 
-/** Options shared by the functions that change a record. [nowMillis] defaults to the current time. */
-data class TransitionOptions(val by: String? = null, val nowMillis: Long? = null)
+/**
+ * Options shared by the functions that change a record. [nowMillis] defaults to the current time.
+ * [reason] says why the change was made and is recorded in history.
+ */
+data class TransitionOptions(val by: String? = null, val nowMillis: Long? = null, val reason: String? = null)
