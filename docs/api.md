@@ -172,3 +172,27 @@ An `Error` with a `code`.
 | `INVALID_RECORD` | A fetched record failed `validateRecord` |
 | `NOT_FOUND` | The source has no record for the module |
 | `SOURCE_ERROR` | The source threw, or the HTTP request failed |
+
+## GitHub
+
+`versimo/github` holds what the Versimo GitHub app needs. It is a separate entry point, so the main package stays small. See [github-app.md](github-app.md) for the full picture.
+
+```ts
+parseModuleTag(tag: string): { module: string; version: string } | null
+modulesFromTags(tags: Iterable<string>): Record<string, string[]>
+recordFromTags(module: string, versions: readonly string[], now?: Date | string | number): ModuleRecord | null
+
+createAppJwt(opts: { appId: string | number; privateKey: string; now?: Date | string | number }): Promise<string>
+getInstallationToken(opts: { jwt: string; installationId: string | number; fetch?; apiUrl? }): Promise<{ token: string; expiresAt: string }>
+verifyWebhookSignature(secret: string, body: string | Uint8Array, signature: string | null | undefined): Promise<boolean>
+
+createGitHub(opts: { token: string; fetch?: typeof fetch; apiUrl?: string }): GitHubClient
+
+interface GitHubClient {
+  listTags(owner: string, repo: string): Promise<string[]>;
+  moduleVersions(owner: string, repo: string): Promise<Record<string, string[]>>;
+  openPullRequest(input: PullRequestInput): Promise<PullRequestResult>;
+}
+```
+
+`openPullRequest` creates a new branch, commits the files to it, opens the pull request and turns on auto merge (squash by default, `autoMerge: false` to skip). It refuses a head branch named `main`, `master`, the default branch or the base, and fails if the branch already exists. It never moves an existing branch. GitHub errors throw `VersimoError` with `NOT_FOUND` or `SOURCE_ERROR`, bad input throws `INVALID_INPUT`.

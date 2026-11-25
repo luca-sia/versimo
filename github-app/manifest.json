@@ -1,0 +1,19 @@
+{
+  "name": "Versimo",
+  "url": "https://versimo.dev",
+  "description": "Reads module tags and opens pull requests for drafts and patches. Never pushes to main.",
+  "hook_attributes": {
+    "url": "https://versimo.dev/api/github/webhook",
+    "active": true
+  },
+  "redirect_url": "https://versimo.dev/app/github/registered",
+  "setup_url": "https://versimo.dev/app/github/installed",
+  "setup_on_update": true,
+  "public": true,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "write",
+    "pull_requests": "write"
+  },
+  "default_events": ["create", "delete", "push", "pull_request"]
+}
