@@ -5,7 +5,8 @@
     "transitions": "Each case gives the input record, an op, its args, an optional by, and a fixed now. expected is the output record, or error is the error code.",
     "resolve": "userId null means no user id. An empty string also means no user.",
     "posthog": "flag is one entry of a PostHog /flags?v=2 answer, or null when the flag is absent. rollout is the share on next it gives, or null to keep the record rollout.",
-    "validation": "errors lists the field named at the start of each error message, in order."
+    "validation": "errors lists the field named at the start of each error message, in order.",
+    "health": "Each case gives the record, checks, observation, a fixed now and an optional by. expected has the record after the check, the verdict and rolledBack, or error is the error code. A missing key in checks or observation means it is not set."
   },
   "bucket": [
     {
@@ -1020,6 +1021,76 @@
             "action": "rollback",
             "from": "2.4.0",
             "to": "2.3.1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rollback with a reason",
+      "op": "rollback",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "alex",
+      "reason": "error rate too high",
+      "expected": {
+        "module": "billing",
+        "last": null,
+        "current": "2.3.1",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "rollback",
+            "from": "2.4.0",
+            "to": "2.3.1",
+            "by": "alex",
+            "reason": "error rate too high"
+          }
+        ]
+      }
+    },
+    {
+      "name": "promote with a reason",
+      "op": "promote",
+      "args": {},
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "reason": "UAT signed off",
+      "expected": {
+        "module": "billing",
+        "last": "2.4.0",
+        "current": "2.5.0",
+        "next": null,
+        "rollout": 0,
+        "healthy": true,
+        "updatedAt": "2026-04-01T10:00:00.000Z",
+        "history": [
+          {
+            "at": "2026-04-01T10:00:00.000Z",
+            "action": "promote",
+            "from": "2.4.0",
+            "to": "2.5.0",
+            "reason": "UAT signed off"
           }
         ]
       }
@@ -2683,6 +2754,54 @@
       ]
     },
     {
+      "name": "history entry with a reason",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "rollback",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "reason": "health: errorRate"
+          }
+        ]
+      },
+      "ok": true,
+      "errors": []
+    },
+    {
+      "name": "history entry reason a number",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0",
+            "reason": 7
+          }
+        ]
+      },
+      "ok": false,
+      "errors": [
+        "history[0].reason"
+      ]
+    },
+    {
       "name": "history second entry bad",
       "record": {
         "module": "billing",
@@ -3410,6 +3529,1567 @@
         }
       },
       "rollout": null
+    }
+  ],
+  "health": [
+    {
+      "name": "no checks is healthy",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "requests": 100,
+        "errors": 100,
+        "latencyMs": 9000,
+        "urlStatus": 500
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "all passing",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05,
+        "maxLatencyMs": 800,
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "requests": 1000,
+        "errors": 50,
+        "latencyMs": 800,
+        "urlStatus": 204
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate at the limit passes",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05
+      },
+      "observation": {
+        "requests": 20,
+        "errors": 1
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate above the limit rolls back",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05
+      },
+      "observation": {
+        "requests": 40,
+        "errors": 3
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.075,
+              "limit": 0.05
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "error rate one third",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.3
+      },
+      "observation": {
+        "requests": 3,
+        "errors": 1
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.3333333333333333,
+              "limit": 0.3
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "error rate limit 0 fails on one error",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0
+      },
+      "observation": {
+        "requests": 1000,
+        "errors": 1
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.001,
+              "limit": 0
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "error rate limit 1 never fails",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 1
+      },
+      "observation": {
+        "requests": 10,
+        "errors": 10
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate skipped below minRequests",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05,
+        "minRequests": 50
+      },
+      "observation": {
+        "requests": 49,
+        "errors": 49
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate judged at minRequests",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05,
+        "minRequests": 50
+      },
+      "observation": {
+        "requests": 50,
+        "errors": 3
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.06,
+              "limit": 0.05
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "error rate skipped with no requests",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05
+      },
+      "observation": {
+        "requests": 0,
+        "errors": 0
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "minRequests 0 still needs one request",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0,
+        "minRequests": 0
+      },
+      "observation": {
+        "requests": 0,
+        "errors": 0
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate skipped without errors",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05
+      },
+      "observation": {
+        "requests": 100
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "error rate skipped without requests",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05
+      },
+      "observation": {
+        "errors": 5
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "latency at the limit passes",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 800
+      },
+      "observation": {
+        "latencyMs": 800
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "latency above the limit rolls back",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 800
+      },
+      "observation": {
+        "latencyMs": 800.5
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: latency"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "latency",
+              "value": 800.5,
+              "limit": 800
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "latency skipped when not measured",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 800
+      },
+      "observation": {
+        "requests": 10
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "url 200 passes",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 200
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "url 299 passes",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 299
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "url 300 fails",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 300
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: url"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "url",
+              "value": 300,
+              "limit": null
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "url 199 fails",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 199
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: url"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "url",
+              "value": 199,
+              "limit": null
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "url 503 fails",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 503
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: url"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "url",
+              "value": 503,
+              "limit": null
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "url unreachable fails",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "urlStatus": 0
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: url"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "url",
+              "value": 0,
+              "limit": null
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "url skipped when not measured",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "measured but not checked is ignored",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "latencyMs": 5000
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "every check fails, in order",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.05,
+        "maxLatencyMs": 800,
+        "url": "https://billing.example.com/health"
+      },
+      "observation": {
+        "requests": 10,
+        "errors": 9,
+        "latencyMs": 2000,
+        "urlStatus": 500
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate, latency, url"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.9,
+              "limit": 0.05
+            },
+            {
+              "check": "latency",
+              "value": 2000,
+              "limit": 800
+            },
+            {
+              "check": "url",
+              "value": 500,
+              "limit": null
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "failure records by",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 100
+      },
+      "observation": {
+        "latencyMs": 200
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "by": "ops-bot",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "ops-bot",
+              "reason": "health: latency"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "latency",
+              "value": 200,
+              "limit": 100
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "failure appends to history",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z",
+        "history": [
+          {
+            "at": "2026-03-12T09:30:00.000Z",
+            "action": "promote",
+            "from": "2.3.1",
+            "to": "2.4.0"
+          }
+        ]
+      },
+      "checks": {
+        "maxLatencyMs": 100
+      },
+      "observation": {
+        "latencyMs": 200
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-03-12T09:30:00.000Z",
+              "action": "promote",
+              "from": "2.3.1",
+              "to": "2.4.0"
+            },
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: latency"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "latency",
+              "value": 200,
+              "limit": 100
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "failure with no last leaves the record",
+      "record": {
+        "module": "billing",
+        "last": null,
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 100
+      },
+      "observation": {
+        "latencyMs": 200
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": true,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "latency",
+              "value": 200,
+              "limit": 100
+            }
+          ]
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "failure while unhealthy still rolls back",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 100
+      },
+      "observation": {
+        "latencyMs": 200
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: latency"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "latency",
+              "value": 200,
+              "limit": 100
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "passing leaves an unhealthy record alone",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": false,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": 100
+      },
+      "observation": {
+        "latencyMs": 50
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": "2.3.1",
+          "current": "2.4.0",
+          "next": "2.5.0",
+          "rollout": 10,
+          "healthy": false,
+          "updatedAt": "2026-03-12T09:30:00Z"
+        },
+        "verdict": {
+          "healthy": true,
+          "failures": []
+        },
+        "rolledBack": false
+      }
+    },
+    {
+      "name": "failure drops next and rollout",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 60,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 0.01
+      },
+      "observation": {
+        "requests": 100,
+        "errors": 2
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "expected": {
+        "record": {
+          "module": "billing",
+          "last": null,
+          "current": "2.3.1",
+          "next": null,
+          "rollout": 0,
+          "healthy": true,
+          "updatedAt": "2026-04-01T10:00:00.000Z",
+          "history": [
+            {
+              "at": "2026-04-01T10:00:00.000Z",
+              "action": "rollback",
+              "from": "2.4.0",
+              "to": "2.3.1",
+              "by": "versimo-health",
+              "reason": "health: errorRate"
+            }
+          ]
+        },
+        "verdict": {
+          "healthy": false,
+          "failures": [
+            {
+              "check": "errorRate",
+              "value": 0.02,
+              "limit": 0.01
+            }
+          ]
+        },
+        "rolledBack": true
+      }
+    },
+    {
+      "name": "maxErrorRate above 1",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": 1.5
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "maxErrorRate below 0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": -0.1
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "maxErrorRate not a number",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxErrorRate": "0.1"
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "maxLatencyMs below 0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "maxLatencyMs": -1
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "url empty",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "url": ""
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "minRequests fractional",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {
+        "minRequests": 1.5
+      },
+      "observation": {},
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "requests fractional",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "requests": 2.5
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "errors below 0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "errors": -1
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "errors above requests",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "requests": 1,
+        "errors": 2
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "latencyMs below 0",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "latencyMs": -5
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
+    },
+    {
+      "name": "urlStatus fractional",
+      "record": {
+        "module": "billing",
+        "last": "2.3.1",
+        "current": "2.4.0",
+        "next": "2.5.0",
+        "rollout": 10,
+        "healthy": true,
+        "updatedAt": "2026-03-12T09:30:00Z"
+      },
+      "checks": {},
+      "observation": {
+        "urlStatus": 200.5
+      },
+      "now": "2026-04-01T10:00:00.000Z",
+      "error": "INVALID_INPUT"
     }
   ]
 }

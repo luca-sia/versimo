@@ -7,6 +7,8 @@ export interface HistoryEntry {
   from: string | null;
   to: string | null;
   by?: string;
+  /** Why the change was made, for example `health: errorRate`. */
+  reason?: string;
 }
 
 export interface ModuleRecord {
@@ -46,6 +48,8 @@ export interface TransitionOptions {
   by?: string;
   /** Time of the change. Defaults to now. */
   now?: Date | string | number;
+  /** Why the change was made. Recorded in history. */
+  reason?: string;
 }
 
 export type ErrorCode = 'INVALID_INPUT' | 'INVALID_RECORD' | 'NOT_FOUND' | 'SOURCE_ERROR';
