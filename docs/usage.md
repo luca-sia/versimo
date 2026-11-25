@@ -3,7 +3,7 @@
 ## Server
 
 ```ts
-import { createClient } from '@versimo/sdk';
+import { createClient } from 'versimo';
 
 const versimo = createClient({
   source: 'https://config.example.com/versimo',
@@ -33,7 +33,7 @@ Records are checked with `validateRecord` when fetched. An invalid record throws
 The SDK uses only `fetch`, `TextEncoder` and standard built-ins.
 
 ```ts
-import { createClient } from '@versimo/sdk';
+import { createClient } from 'versimo';
 
 const versimo = createClient({ source: '/versimo' });
 const version = await versimo.version('search', { userId: currentUserId });
@@ -45,7 +45,7 @@ Use a stable id. A signed-in user id is best. For anonymous visitors, store a ra
 
 ```tsx
 import { useEffect, useState } from 'react';
-import { createClient } from '@versimo/sdk';
+import { createClient } from 'versimo';
 
 const versimo = createClient({ source: '/versimo' });
 
@@ -74,7 +74,7 @@ export function Billing({ userId }: { userId: string }) {
 
 ```ts
 import { OpenFeature } from '@openfeature/server-sdk';
-import { createClient, VersimoProvider } from '@versimo/sdk';
+import { createClient, VersimoProvider } from 'versimo';
 
 const client = createClient({ source: 'https://config.example.com/versimo' });
 await OpenFeature.setProviderAndWait(new VersimoProvider(client));
@@ -101,7 +101,7 @@ You can keep records in PostHog as the JSON payload of a feature flag. Versimo d
 
 ```ts
 import { PostHog } from 'posthog-node';
-import { createClient, type ModuleRecord } from '@versimo/sdk';
+import { createClient, type ModuleRecord } from 'versimo';
 
 const posthog = new PostHog(process.env.POSTHOG_API_KEY!);
 
@@ -120,7 +120,7 @@ Any store works the same way. Return the record, or null when the module does no
 The transition functions are pure. Read, change, write.
 
 ```ts
-import { promote } from '@versimo/sdk';
+import { promote } from 'versimo';
 
 const record = await versimo.record('billing');
 await store.save(promote(record, { by: 'alex' }));
@@ -134,7 +134,7 @@ Other processes see the change after their cache expires.
 Your monitoring decides when current is unhealthy. When it does, write the record with `healthy: false`. Users get last at once. Then call `rollback` to make it permanent, and ship the fix as a patch.
 
 ```ts
-import { rollback } from '@versimo/sdk';
+import { rollback } from 'versimo';
 
 await store.save({ ...record, healthy: false });
 // later, once you have decided

@@ -1,5 +1,5 @@
 {
-  "name": "@versimo/sdk",
+  "name": "versimo",
   "version": "0.1.0",
   "description": "Release model with no staging. Resolve last, current and next versions of a module for each user.",
   "type": "module",
@@ -8,10 +8,10 @@
   "homepage": "https://versimo.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/luca-sia/versimo-sdk.git"
+    "url": "git+https://github.com/luca-sia/versimo.git"
   },
   "bugs": {
-    "url": "https://github.com/luca-sia/versimo-sdk/issues"
+    "url": "https://github.com/luca-sia/versimo/issues"
   },
   "keywords": ["release", "rollout", "feature-flags", "openfeature", "versioning"],
   "engines": {

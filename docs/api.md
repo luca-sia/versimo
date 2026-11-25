@@ -1,6 +1,6 @@
 # API reference
 
-Everything is a named export of `@versimo/sdk`.
+Everything is a named export of `versimo`.
 
 ## Types
 

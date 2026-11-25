@@ -4,7 +4,7 @@ Thanks for helping. The aim of this SDK is to stay small, with no runtime depend
 
 ## Open an issue
 
-Use [GitHub issues](https://github.com/luca-sia/versimo-sdk/issues).
+Use [GitHub issues](https://github.com/luca-sia/versimo/issues).
 
 - For a bug, say what you did, what you expected and what happened. A short code sample or a record helps a lot. Add the SDK version and your Node version or browser.
 - For an idea, describe the problem first, then your suggestion.

@@ -18,13 +18,13 @@ Site: [versimo.dev](https://versimo.dev)
 ## Install
 
 ```sh
-npm install @versimo/sdk
+npm install versimo
 ```
 
 The package is not on npm yet. Until it is published, install it from GitHub:
 
 ```sh
-npm install github:luca-sia/versimo-sdk
+npm install github:luca-sia/versimo
 ```
 
 The install builds the package on your machine, so it needs a working `npm` and Node 20 or later.
@@ -32,7 +32,7 @@ The install builds the package on your machine, so it needs a working `npm` and 
 ## Quick start
 
 ```ts
-import { createClient } from '@versimo/sdk';
+import { createClient } from 'versimo';
 
 const versimo = createClient({
   source: 'https://config.example.com/versimo', // fetches /versimo/billing.json
@@ -48,7 +48,7 @@ Load the version your code asks for. How you do that is up to you. It might be a
 You can also work with a record directly:
 
 ```ts
-import { resolveVersion, draftNext, setRollout, promote } from '@versimo/sdk';
+import { resolveVersion, draftNext, setRollout, promote } from 'versimo';
 
 let record = await versimo.record('billing');
 record = draftNext(record, '2.6.0', { by: 'alex' });
