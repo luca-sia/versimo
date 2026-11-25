@@ -2,6 +2,9 @@
 // keeps serving everything else. Secrets are set with `wrangler secret put`:
 //   CLIENT_SECRET   from accounts.lucasia.ai, kept in 1Password LUCASIA/versimo-production
 //   SESSION_SECRET  32 random bytes or more, kept in the same 1Password item
+//   GITHUB_CLIENT_SECRET, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET
+//                   from the Versimo GitHub app, kept in 1Password LUCASIA/versimo-github-app
+// GITHUB_APP_ID and GITHUB_CLIENT_ID go in vars once the app is registered.
 {
   "name": "versimo-api",
   "main": "src/worker.ts",
@@ -9,12 +12,14 @@
   "compatibility_flags": ["nodejs_compat"],
   "routes": [
     { "pattern": "versimo.dev/api/*", "zone_name": "versimo.dev" },
-    { "pattern": "versimo.dev/app/callback", "zone_name": "versimo.dev" }
+    { "pattern": "versimo.dev/app/callback", "zone_name": "versimo.dev" },
+    { "pattern": "versimo.dev/app/github/callback", "zone_name": "versimo.dev" }
   ],
   "vars": {
     "ISSUER": "https://accounts.lucasia.ai",
     "CLIENT_ID": "versimo",
-    "APP_ORIGIN": "https://versimo.dev"
+    "APP_ORIGIN": "https://versimo.dev",
+    "GITHUB_APP_SLUG": "versimo"
   },
   "hyperdrive": [
     {

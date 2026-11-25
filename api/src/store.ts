@@ -31,6 +31,13 @@ export interface AuditEntry {
   by: string | null;
 }
 
+/** The repository a project is connected to through the GitHub app. */
+export interface GithubLink {
+  installationId: number;
+  /** owner/name, or null while the person still has to pick a repository. */
+  repo: string | null;
+}
+
 /** A module as stored. The same shape as a Versimo record, without the history. */
 export type StoredModule = Omit<ModuleRecord, 'history' | '$schema'>;
 
@@ -46,9 +53,20 @@ export interface Store {
   getProject(ownerId: string, projectId: string): Promise<Project | null>;
   renameProject(ownerId: string, projectId: string, name: string): Promise<Project | null>;
   deleteProject(ownerId: string, projectId: string): Promise<boolean>;
+  /** Null when the project is not connected, does not exist or belongs to someone else. */
+  getGithub(ownerId: string, projectId: string): Promise<GithubLink | null>;
+  /** Connects or, with null, disconnects a repository. False when the project is not the owner's. */
+  setGithub(ownerId: string, projectId: string, link: GithubLink | null): Promise<boolean>;
+  /** Ids of every project connected to this repository through this installation. */
+  projectsForRepo(installationId: number, repo: string): Promise<string[]>;
+  /** Disconnects every project from an installation that was removed. Returns how many. */
+  clearInstallation(installationId: number): Promise<number>;
   listModules(projectId: string): Promise<StoredModule[]>;
-  /** Adds a module and its create entry. False when the slug is taken. */
-  createModule(projectId: string, module: StoredModule, entry: AuditEntry, byUser: string): Promise<boolean>;
+  /**
+   * Adds a module and its create entry. False when the slug is taken.
+   * byUser is null when the GitHub app made the change.
+   */
+  createModule(projectId: string, module: StoredModule, entry: AuditEntry, byUser: string | null): Promise<boolean>;
   /**
    * Reads the module, applies `change` and writes the result and the new
    * history entries in one transaction. Null when the module does not exist.

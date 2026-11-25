@@ -6,14 +6,14 @@
     "url": "https://versimo.dev/api/github/webhook",
     "active": true
   },
-  "redirect_url": "https://versimo.dev/app/github/registered",
-  "setup_url": "https://versimo.dev/app/github/installed",
-  "setup_on_update": true,
+  "redirect_url": "https://versimo.dev/app",
+  "callback_urls": ["https://versimo.dev/app/github/callback"],
+  "request_oauth_on_install": true,
   "public": true,
   "default_permissions": {
     "metadata": "read",
     "contents": "write",
     "pull_requests": "write"
   },
-  "default_events": ["create", "delete", "push", "pull_request"]
+  "default_events": ["create", "pull_request"]
 }

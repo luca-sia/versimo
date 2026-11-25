@@ -7,6 +7,8 @@ import {
   VersimoError,
   type ModuleRecord,
 } from '../../src/index.js';
+import { parseModuleTag, recordFromTags, verifyWebhookSignature } from '../../src/github/index.js';
+import { githubApp, type GithubConfig } from './github.js';
 import { cookie, pkceChallenge, randomToken, readCookie, sign, verify } from './session.js';
 import type { AuditEntry, Store, StoredModule } from './store.js';
 
@@ -22,6 +24,8 @@ export interface Config {
   sessionSecret: string;
   /** Where the app lives, https://versimo.dev. */
   appOrigin: string;
+  /** The GitHub app. Without it the GitHub routes answer 503. */
+  github?: GithubConfig;
 }
 
 export interface Deps {
@@ -47,6 +51,14 @@ const SIGN_IN = 'versimo_signin';
 const SESSION_TTL = 7 * 24 * 3600;
 const SIGN_IN_TTL = 10 * 60;
 const CALLBACK = '/app/callback';
+const GITHUB_CALLBACK = '/app/github/callback';
+const GITHUB_STATE_TTL = 15 * 60;
+const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+interface GithubState {
+  uid: string;
+  project: string;
+}
 
 class HttpError extends Error {
   constructor(
@@ -94,6 +106,8 @@ function projectName(value: unknown): string {
 }
 
 const toRecord = (m: StoredModule): ModuleRecord => ({ ...m, history: [] });
+
+const isStable = (v: string) => !/^[^+]*-/.test(v);
 
 const fromRecord = (r: ModuleRecord): StoredModule => ({
   module: r.module,
@@ -260,12 +274,116 @@ export function createApp(deps: Deps) {
     return json({ module: updated });
   }
 
+  function github() {
+    if (!config.github) throw new HttpError(503, 'The GitHub app is not set up yet');
+    return githubApp(config.github, doFetch);
+  }
+
+  /** Adds the modules a repository's tags name and the project does not have yet. */
+  async function importModules(projectId: string, modules: Record<string, string[]>, by: string, byUser: string | null) {
+    const imported: string[] = [];
+    for (const [name, versions] of Object.entries(modules)) {
+      const record = recordFromTags(name, versions);
+      if (!record) continue;
+      const entry: AuditEntry = { module: name, at: record.updatedAt, action: 'create', from: null, to: record.current, by };
+      if (await store.createModule(projectId, fromRecord(record), entry, byUser)) imported.push(name);
+    }
+    return imported;
+  }
+
+  async function githubInstall(s: Session, projectId: string): Promise<Response> {
+    const app = github();
+    const state = await sign({ uid: s.uid, project: projectId } satisfies GithubState, config.sessionSecret, GITHUB_STATE_TTL);
+    return redirect(app.installUrl(state));
+  }
+
+  async function githubCallback(request: Request, url: URL): Promise<Response> {
+    const app = github();
+    const s = await session(request);
+    const state = await verify<GithubState>(url.searchParams.get('state') ?? undefined, config.sessionSecret);
+    if (!s || !state || state.uid !== s.uid) return redirect('/app?github=expired');
+    const back = (result: string) => redirect(`/app?project=${encodeURIComponent(state.project)}&github=${result}`);
+    if (!(await store.getProject(s.uid, state.project))) return redirect('/app?github=expired');
+
+    const code = url.searchParams.get('code');
+    const installationId = Number(url.searchParams.get('installation_id'));
+    if (!code || !Number.isSafeInteger(installationId) || installationId <= 0) return back('cancelled');
+    if (!(await app.userHasInstallation(code, installationId))) return back('denied');
+
+    const repos = await app.repositories(installationId);
+    const repo = repos.length === 1 ? repos[0]! : null;
+    await store.setGithub(s.uid, state.project, { installationId, repo });
+    if (!repo) return back('choose');
+    await importModules(state.project, await app.moduleVersions(installationId, repo), s.name ?? s.email ?? 'GitHub', s.uid);
+    return back('connected');
+  }
+
+  async function githubProject(s: Session, projectId: string, request: Request): Promise<Response> {
+    const method = request.method;
+    if (method === 'DELETE') {
+      await store.setGithub(s.uid, projectId, null);
+      return new Response(null, { status: 204 });
+    }
+    const link = await store.getGithub(s.uid, projectId);
+    if (method === 'GET') {
+      if (!link) return json({ github: null, repos: [] });
+      return json({ github: link, repos: await github().repositories(link.installationId) });
+    }
+    if (method === 'PUT') {
+      if (!link) throw new HttpError(409, 'Install the GitHub app for this project first');
+      const wanted = (await body(request)).repo;
+      if (typeof wanted !== 'string' || !REPO.test(wanted)) throw new HttpError(400, 'repo must be owner/name');
+      const app = github();
+      const repo = (await app.repositories(link.installationId)).find((r) => r.toLowerCase() === wanted.toLowerCase());
+      if (!repo) throw new HttpError(400, `The GitHub app cannot see ${wanted}`);
+      const next = { installationId: link.installationId, repo };
+      await store.setGithub(s.uid, projectId, next);
+      const imported = await importModules(projectId, await app.moduleVersions(link.installationId, repo), s.name ?? s.email ?? 'GitHub', s.uid);
+      return json({ github: next, imported });
+    }
+    throw new HttpError(405, 'Method not allowed');
+  }
+
+  async function githubWebhook(request: Request): Promise<Response> {
+    if (!config.github) throw new HttpError(503, 'The GitHub app is not set up yet');
+    const raw = new Uint8Array(await request.arrayBuffer());
+    const ok = await verifyWebhookSignature(config.github.webhookSecret, raw, request.headers.get('x-hub-signature-256'));
+    if (!ok) throw new HttpError(401, 'Bad signature');
+    let payload: any;
+    try {
+      payload = JSON.parse(new TextDecoder().decode(raw));
+    } catch {
+      throw new HttpError(400, 'Send a JSON object');
+    }
+    const event = request.headers.get('x-github-event');
+    const installationId = Number(payload?.installation?.id);
+
+    if (event === 'installation' && payload.action === 'deleted' && installationId > 0) {
+      return json({ cleared: await store.clearInstallation(installationId) }, 202);
+    }
+    if (event === 'create' && payload.ref_type === 'tag' && installationId > 0) {
+      const tag = parseModuleTag(String(payload.ref ?? ''));
+      const repo = String(payload.repository?.full_name ?? '');
+      if (!tag || !isStable(tag.version) || !REPO.test(repo)) return json({ ignored: true }, 202);
+      const created: string[] = [];
+      for (const projectId of await store.projectsForRepo(installationId, repo)) {
+        const done = await importModules(projectId, { [tag.module]: [tag.version] }, 'GitHub', null);
+        if (done.length) created.push(projectId);
+      }
+      return json({ module: tag.module, version: tag.version, projects: created.length }, 202);
+    }
+    return json({ ignored: true }, 202);
+  }
+
   async function route(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const parts = url.pathname.split('/').filter(Boolean);
     const method = request.method;
 
     if (url.pathname === CALLBACK && method === 'GET') return callback(request, url);
+    if (url.pathname === GITHUB_CALLBACK && method === 'GET') return githubCallback(request, url);
+    // GitHub signs its webhooks, so this sits before the session and Origin checks.
+    if (url.pathname === '/api/github/webhook' && method === 'POST') return githubWebhook(request);
     if (url.pathname === '/api/auth/login' && method === 'GET') return login(url);
     if (url.pathname === '/api/auth/logout' && method === 'POST') {
       return json({ ok: true }, 200, { 'set-cookie': cookie(SESSION, '', '/', 0) });
@@ -302,6 +420,8 @@ export function createApp(deps: Deps) {
       }
       throw new HttpError(405, 'Method not allowed');
     }
+    if (sub === 'github' && !moduleName) return githubProject(s, p.id, request);
+    if (sub === 'github' && moduleName === 'install' && !action && method === 'GET') return githubInstall(s, p.id);
     if (sub === 'history' && !moduleName && method === 'GET') {
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 500);
       return json({ history: await store.listHistory(p.id, limit) });

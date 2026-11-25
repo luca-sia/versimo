@@ -89,6 +89,45 @@ function contract(name: string, make: () => Promise<Store>) {
       );
     });
 
+    it('connects a repository to the owner\'s project only', async () => {
+      const store = await make();
+      const a = await store.upsertUser(identity('gh-a'));
+      const b = await store.upsertUser(identity('gh-b'));
+      const p = await store.createProject(a.id, 'Shop');
+      assert.equal(await store.getGithub(a.id, p.id), null);
+      assert.equal(await store.setGithub(b.id, p.id, { installationId: 7, repo: 'acme/shop' }), false);
+      assert.equal(await store.setGithub(a.id, p.id, { installationId: 7, repo: null }), true);
+      assert.deepEqual(await store.getGithub(a.id, p.id), { installationId: 7, repo: null });
+      assert.deepEqual(await store.projectsForRepo(7, 'acme/shop'), []);
+      assert.equal(await store.setGithub(a.id, p.id, { installationId: 7, repo: 'Acme/Shop' }), true);
+      assert.equal(await store.getGithub(b.id, p.id), null);
+      assert.deepEqual(await store.projectsForRepo(7, 'acme/shop'), [p.id]);
+      assert.deepEqual(await store.projectsForRepo(8, 'acme/shop'), []);
+      assert.deepEqual((await store.getProject(a.id, p.id))?.name, 'Shop');
+      assert.equal(await store.setGithub(a.id, p.id, null), true);
+      assert.equal(await store.getGithub(a.id, p.id), null);
+    });
+
+    it('clears every project of a removed installation', async () => {
+      const store = await make();
+      const u = await store.upsertUser(identity('gh-clear'));
+      const p = await store.createProject(u.id, 'Shop');
+      const q = await store.createProject(u.id, 'Blog');
+      await store.setGithub(u.id, p.id, { installationId: 99, repo: 'acme/shop' });
+      await store.setGithub(u.id, q.id, { installationId: 99, repo: 'acme/blog' });
+      assert.equal(await store.clearInstallation(99), 2);
+      assert.equal(await store.getGithub(u.id, p.id), null);
+      assert.equal(await store.clearInstallation(99), 0);
+    });
+
+    it('records a module the GitHub app created, with no user', async () => {
+      const store = await make();
+      const u = await store.upsertUser(identity('gh-mod'));
+      const p = await store.createProject(u.id, 'Shop');
+      assert.equal(await store.createModule(p.id, billing, { ...entry('create', '1.0.0'), by: 'GitHub' }, null), true);
+      assert.deepEqual((await store.listHistory(p.id, 10)).map((h) => h.by), ['GitHub']);
+    });
+
     it('deletes a project with its modules and history', async () => {
       const store = await make();
       const u = await store.upsertUser(identity('gone'));

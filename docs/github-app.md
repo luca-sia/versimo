@@ -28,7 +28,7 @@ For a module with no record yet, Versimo starts one from its tags: current is th
 | Contents | Write | Read code and tags, and create the branch a pull request comes from |
 | Pull requests | Write | Open pull requests and turn on auto merge |
 
-Events: `create`, `delete` and `push` (tags appear and go away), and `pull_request` (a draft or patch merged or closed).
+Events: `create` (a new tag adds its module) and `pull_request` (a draft or patch merged or closed). GitHub also sends `installation` events, so uninstalling the app disconnects its projects.
 
 GitHub has no permission for "create branches but not push to main". Contents write is the narrowest level that lets an app open a pull request from its own branch. Versimo keeps the promise in two ways:
 
@@ -79,7 +79,12 @@ This is done once, by the owner of the `luca-sia` organisation. The manifest is 
 
 1. Open `https://github.com/organizations/luca-sia/settings/apps/new` and register the app from the manifest (GitHub's [manifest flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)), or fill in the same values by hand.
 2. Generate a private key and a webhook secret.
-3. Save the app id, client id, private key and webhook secret in 1Password, never in the repository.
-4. Give them to the API Worker as secrets: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` and `GITHUB_WEBHOOK_SECRET`.
+   Keep "Request user authorization (OAuth) during installation" on, as the manifest sets it. The API checks with the installer's own token that they can see the installation before it connects a repo.
+3. Generate a client secret too. Save the app id, client id, client secret, private key and webhook secret in 1Password, never in the repository.
+4. Give them to the API Worker (`api/`): `GITHUB_APP_ID` and `GITHUB_CLIENT_ID` as vars, `GITHUB_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY` and `GITHUB_WEBHOOK_SECRET` as secrets. See [api/README.md](../api/README.md).
 
-The webhook and callback URLs in the manifest point at `versimo.dev`. Change them there first if the API Worker lives somewhere else.
+The webhook and callback URLs in the manifest point at the API Worker on `versimo.dev`: `/api/github/webhook` and `/app/github/callback`.
+
+## Connecting a repo in the app
+
+On a project, Connect GitHub sends you to `GET /api/projects/:id/github/install`, which goes on to GitHub. Pick the repos the app may see. Back in the app, a single repo connects at once. With several, you pick one. Every module with a stable tag is added to the project, and later a new module's first stable tag adds it. Tags never change a module that exists.
