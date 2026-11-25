@@ -1,0 +1,26 @@
+// The versimo.dev app API. Same zone as the site Worker (versimo-site), which
+// keeps serving everything else. Secrets are set with `wrangler secret put`:
+//   CLIENT_SECRET   from accounts.lucasia.ai, kept in 1Password LUCASIA/versimo-production
+//   SESSION_SECRET  32 random bytes or more, kept in the same 1Password item
+{
+  "name": "versimo-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "versimo.dev/api/*", "zone_name": "versimo.dev" },
+    { "pattern": "versimo.dev/app/callback", "zone_name": "versimo.dev" }
+  ],
+  "vars": {
+    "ISSUER": "https://accounts.lucasia.ai",
+    "CLIENT_ID": "versimo",
+    "APP_ORIGIN": "https://versimo.dev"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // Set after `wrangler hyperdrive create versimo-db`. See README.md.
+      "id": "REPLACE_WITH_HYPERDRIVE_ID"
+    }
+  ]
+}

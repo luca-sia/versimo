@@ -1,0 +1,19 @@
+{
+  "name": "versimo-api",
+  "private": true,
+  "type": "module",
+  "description": "The versimo.dev app API: sign in through accounts.lucasia.ai, saved projects and modules on Postgres.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "deploy": "npx wrangler deploy"
+  },
+  "dependencies": {
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
