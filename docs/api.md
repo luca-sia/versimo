@@ -99,12 +99,15 @@ interface ClientOptions {
   ttlMs?: number;            // default 30000
   now?: () => number;        // clock for the cache, for tests
   fetch?: typeof fetch;      // for URL sources
+  rollout?: (module: string) => number | null | undefined | Promise<number | null | undefined>;
 }
 ```
 
+`rollout` overrides the record's share on next, for example with `postHogRollout`. Only the share changes. When it returns null, a value outside 0 to 100, or throws, the record's own rollout is used.
+
 Returns a `VersimoClient`:
 
-- `record(module)` returns the cached or freshly loaded, validated record.
+- `record(module)` returns the cached or freshly loaded, validated record, with any `rollout` override applied.
 - `resolve(module, ctx?)` returns a `Resolution`.
 - `version(module, ctx?)` returns the version string.
 - `clear(module?)` drops one cached record, or all.
@@ -112,6 +115,30 @@ Returns a `VersimoClient`:
 Concurrent loads of one module share a single request. If a refresh fails with a source error and a stale record exists, the stale record is returned.
 
 Module slugs must match `^[a-z0-9]+(-[a-z0-9]+)*$`.
+
+## PostHog
+
+### `postHogRollout(options)`
+
+```ts
+interface PostHogRolloutOptions {
+  apiKey: string;            // PostHog project key, phc_...
+  host?: string;             // default https://eu.i.posthog.com
+  ttlMs?: number;            // default 30000
+  now?: () => number;
+  fetch?: typeof fetch;
+}
+```
+
+Returns a rollout function for `createClient`. It reads the flag `versimo-<module>` from one `/flags?v=2` request per TTL, sent with the distinct id `versimo` and no user data. See [PostHog flags drive next](usage.md#posthog-flags-drive-next).
+
+### `rolloutFromFlag(flag)`
+
+The share on next from one flag of a PostHog `/flags?v=2` answer, or null to keep the record's rollout. Flag off gives 0. Flag on with a payload whose `rollout` is a whole number from 0 to 100 gives that number. The payload may be a JSON string or an object.
+
+### `postHogFlagKey(module)`
+
+`versimo-<module>`.
 
 ## OpenFeature provider
 

@@ -29,6 +29,9 @@ type ClientOptions struct {
 	Now func() time.Time
 	// HTTPClient is used for URL sources. Default is a client with a 10 second timeout.
 	HTTPClient *http.Client
+	// Rollout optionally overrides the record's share on next, for example NewPostHogRollout.
+	// Only the share changes. Who lands on next is still decided by BucketFor.
+	Rollout RolloutSource
 }
 
 type cached struct {
@@ -39,9 +42,10 @@ type cached struct {
 // Client resolves versions from a source, with a TTL cache and stale-on-error.
 // It is safe for concurrent use.
 type Client struct {
-	source func(ctx context.Context, module string) (any, error)
-	ttl    time.Duration
-	now    func() time.Time
+	source  func(ctx context.Context, module string) (any, error)
+	ttl     time.Duration
+	now     func() time.Time
+	rollout RolloutSource
 
 	mu    sync.Mutex
 	cache map[string]cached
@@ -52,7 +56,7 @@ var slugRe2 = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 // NewClient makes a client. It returns an error when there is no source.
 func NewClient(o ClientOptions) (*Client, error) {
-	c := &Client{ttl: o.TTL, now: o.Now, cache: map[string]cached{}, locks: map[string]*sync.Mutex{}}
+	c := &Client{ttl: o.TTL, now: o.Now, rollout: o.Rollout, cache: map[string]cached{}, locks: map[string]*sync.Mutex{}}
 	if c.ttl == 0 {
 		c.ttl = 30 * time.Second
 	}
@@ -140,9 +144,20 @@ func (c *Client) load(ctx context.Context, module string) (ModuleRecord, error) 
 	return recordFromValue(raw, module)
 }
 
-// Record returns the cached or freshly loaded, validated record.
+// Record returns the cached or freshly loaded, validated record, with any rollout override applied.
 // If a refresh fails with a source error and a stale record exists, the stale record is returned.
 func (c *Client) Record(ctx context.Context, module string) (ModuleRecord, error) {
+	rec, err := c.stored(ctx, module)
+	if err != nil || c.rollout == nil {
+		return rec, err
+	}
+	if share, ok := c.rollout(ctx, rec.Module); ok && share >= 0 && share <= 100 {
+		rec.Rollout = share
+	}
+	return rec, nil
+}
+
+func (c *Client) stored(ctx context.Context, module string) (ModuleRecord, error) {
 	if !slugRe2.MatchString(module) {
 		return ModuleRecord{}, newError(CodeInvalidInput, fmt.Sprintf("Invalid module slug: %q", module))
 	}

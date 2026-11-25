@@ -2,6 +2,13 @@
 
 All notable changes are listed here. This project follows [semver](https://semver.org).
 
+## Unreleased
+
+- PostHog flags drive next. `postHogRollout` reads the share on next for each module from the PostHog flag `versimo-<module>`, so a rollout change needs no deploy. Bucketing stays with Versimo, so users land on the same version in every language. No user data is sent to PostHog.
+- `createClient` takes a `rollout` option that overrides the record's share
+- Python (`PostHogRollout`) and Go (`NewPostHogRollout`) get the same
+- `posthog` section in `spec/vectors.json`
+
 ## 0.2.0
 
 - Versimo for Python, Go, Kotlin and Swift, in `packages/`

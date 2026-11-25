@@ -54,6 +54,11 @@ type vectors struct {
 			Valid bool   `json:"valid"`
 		} `json:"valid"`
 	} `json:"semver"`
+	Posthog []struct {
+		Name    string `json:"name"`
+		Flag    any    `json:"flag"`
+		Rollout *int   `json:"rollout"`
+	} `json:"posthog"`
 }
 
 func loadVectors(t *testing.T) vectors {
@@ -183,6 +188,23 @@ func TestSemverVectors(t *testing.T) {
 	for _, c := range v.Semver.Valid {
 		if got := IsSemver(c.Value); got != c.Valid {
 			t.Errorf("IsSemver(%q) = %v, want %v", c.Value, got, c.Valid)
+		}
+	}
+}
+
+func TestPostHogVectors(t *testing.T) {
+	v := loadVectors(t)
+	if len(v.Posthog) == 0 {
+		t.Fatal("no posthog vectors")
+	}
+	for _, c := range v.Posthog {
+		got, ok := RolloutFromFlag(c.Flag)
+		if c.Rollout == nil {
+			if ok {
+				t.Errorf("%s: got %d, want no override", c.Name, got)
+			}
+		} else if !ok || got != *c.Rollout {
+			t.Errorf("%s: got %d %v, want %d", c.Name, got, ok, *c.Rollout)
 		}
 	}
 }

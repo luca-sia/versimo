@@ -6,6 +6,7 @@ import {
   promote,
   resolve,
   rollback,
+  rolloutFromFlag,
   setRollout,
   validateRecord,
   VersimoError,
@@ -294,6 +295,36 @@ function semvers() {
   return { compare, valid: values.map((value) => ({ value, valid: isSemver(value) })) };
 }
 
+function posthogFlags() {
+  const flag = (enabled: unknown, payload?: unknown) =>
+    payload === undefined ? { key: 'versimo-billing', enabled } : { key: 'versimo-billing', enabled, metadata: { payload } };
+  const cases: [string, unknown][] = [
+    ['no flag', null],
+    ['flag off', flag(false)],
+    ['flag off ignores payload', flag(false, '{"rollout":50}')],
+    ['flag on, no payload', flag(true)],
+    ['payload as JSON string', flag(true, '{"rollout":25}')],
+    ['payload as object', flag(true, { rollout: 25 })],
+    ['rollout 0', flag(true, '{"rollout":0}')],
+    ['rollout 100', flag(true, '{"rollout":100}')],
+    ['rollout 101 is ignored', flag(true, '{"rollout":101}')],
+    ['rollout -1 is ignored', flag(true, '{"rollout":-1}')],
+    ['rollout 25.0 counts as 25', flag(true, '{"rollout":25.0}')],
+    ['rollout true is ignored', flag(true, '{"rollout":true}')],
+    ['rollout 12.5 is ignored', flag(true, '{"rollout":12.5}')],
+    ['rollout as text is ignored', flag(true, '{"rollout":"25"}')],
+    ['payload not JSON', flag(true, 'rollout 25')],
+    ['payload is a number', flag(true, '25')],
+    ['payload has no rollout', flag(true, '{"share":25}')],
+    ['payload null', flag(true, null)],
+    ['whole record as payload', flag(true, JSON.stringify(record({ rollout: 30 })))],
+    ['extra payload fields', flag(true, '{"rollout":40,"note":"Friday"}')],
+    ['enabled missing', { key: 'versimo-billing', metadata: { payload: '{"rollout":25}' } }],
+    ['enabled as text', flag('true', '{"rollout":25}')],
+  ];
+  return cases.map(([name, f]) => ({ name, flag: f, rollout: rolloutFromFlag(f) }));
+}
+
 export function buildVectors() {
   return {
     description:
@@ -303,6 +334,8 @@ export function buildVectors() {
       transitions:
         'Each case gives the input record, an op, its args, an optional by, and a fixed now. expected is the output record, or error is the error code.',
       resolve: 'userId null means no user id. An empty string also means no user.',
+      posthog:
+        'flag is one entry of a PostHog /flags?v=2 answer, or null when the flag is absent. rollout is the share on next it gives, or null to keep the record rollout.',
       validation: 'errors lists the field named at the start of each error message, in order.',
     },
     bucket: buckets(),
@@ -310,5 +343,6 @@ export function buildVectors() {
     transitions: transitions(),
     validation: validations(),
     semver: semvers(),
+    posthog: posthogFlags(),
   };
 }

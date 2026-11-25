@@ -3,6 +3,7 @@
 from .bucket import bucket_for
 from .client import Client, create_client
 from .errors import VersimoError
+from .posthog import POSTHOG_DISTINCT_ID, PostHogRollout, posthog_flag_key, rollout_from_flag
 from .resolve import resolve, resolve_version
 from .semver import SEMVER_PATTERN, compare_semver, is_semver, parse_semver
 from .transitions import draft_next, promote, rollback, set_rollout
@@ -13,6 +14,8 @@ __version__ = "0.2.0"
 
 __all__ = [
     "Client",
+    "POSTHOG_DISTINCT_ID",
+    "PostHogRollout",
     "ModuleRecord",
     "Resolution",
     "SEMVER_PATTERN",
@@ -26,8 +29,10 @@ __all__ = [
     "parse_semver",
     "promote",
     "resolve",
+    "posthog_flag_key",
     "resolve_version",
     "rollback",
+    "rollout_from_flag",
     "set_rollout",
     "validate_record",
 ]

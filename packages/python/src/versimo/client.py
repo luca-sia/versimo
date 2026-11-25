@@ -9,6 +9,7 @@ import urllib.request
 from typing import Any, Callable, Optional, Union
 
 from .errors import VersimoError
+from .posthog import RolloutSource
 from .resolve import resolve as _resolve
 from .types import ModuleRecord, Resolution
 from .validate import validate_record
@@ -60,6 +61,9 @@ class Client:
     `source` is a function from module slug to record (or None), or a URL.
     A URL containing `{module}` has it replaced. Any other URL is a base and
     the client fetches `<base>/<module>.json`.
+
+    `rollout` optionally overrides the record's share on next, for example
+    `PostHogRollout(api_key)`. When it gives None or fails, the record's own rollout is used.
     """
 
     def __init__(
@@ -70,10 +74,12 @@ class Client:
         now: Optional[Callable[[], float]] = None,
         fetch: Optional[Fetcher] = None,
         timeout: float = 10.0,
+        rollout: Optional[RolloutSource] = None,
     ) -> None:
         if isinstance(source, str):
             source = _url_source(source, fetch or _urlopen_fetch(timeout))
         self._source = source
+        self._rollout = rollout
         self._ttl_ms = ttl_ms
         self._now = now or (lambda: time.time() * 1000)
         self._cache: dict[str, tuple[ModuleRecord, float]] = {}
@@ -94,7 +100,22 @@ class Client:
         return raw
 
     def record(self, module: str) -> ModuleRecord:
-        """The cached or freshly loaded, validated record."""
+        """The cached or freshly loaded, validated record, with any rollout override applied."""
+        return self._with_rollout(self._stored(module))
+
+    def _with_rollout(self, rec: ModuleRecord) -> ModuleRecord:
+        # Only the share changes. Who lands on next is still decided by bucket_for.
+        if self._rollout is None:
+            return rec
+        try:
+            share = self._rollout(rec["module"])
+        except Exception:
+            return rec
+        if isinstance(share, bool) or not isinstance(share, int) or not 0 <= share <= 100 or share == rec["rollout"]:
+            return rec
+        return {**rec, "rollout": share}
+
+    def _stored(self, module: str) -> ModuleRecord:
         if not isinstance(module, str) or _SLUG_OK.fullmatch(module) is None:
             raise VersimoError("INVALID_INPUT", f"Invalid module slug: {json.dumps(module)}")
         # One lock per module, so concurrent callers share a single load.
