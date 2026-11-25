@@ -9,6 +9,7 @@ import {
   promote,
   resolve,
   rollback,
+  rolloutFromFlag,
   setRollout,
   validateRecord,
   VersimoError,
@@ -70,4 +71,8 @@ test('validation vectors', () => {
 test('semver vectors', () => {
   for (const c of vectors.semver.compare) assert.equal(compareSemver(c.a, c.b), c.expected, `${c.a} vs ${c.b}`);
   for (const c of vectors.semver.valid) assert.equal(isSemver(c.value), c.valid, JSON.stringify(c.value));
+});
+
+test('posthog vectors', () => {
+  for (const c of vectors.posthog) assert.equal(rolloutFromFlag(c.flag), c.rollout, c.name);
 });

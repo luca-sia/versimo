@@ -13,6 +13,8 @@ The reference is the TypeScript source in `src/`. The shared test data is [spec/
 - Semver check and compare
 - A client with a source (a function, or a URL), a TTL cache and stale-on-error
 
+A PostHog rollout source is optional. If a port has one, `rolloutFromFlag` must pass the `posthog` vectors, and the client applies the share to the record before resolving. PostHog only sets the share. The bucket always decides who is on next.
+
 An OpenFeature provider is optional. Add it only when the language has a way to do it without a dependency.
 
 ## The bucket

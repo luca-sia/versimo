@@ -131,15 +131,52 @@ The default value you pass is returned on errors. Boolean, number and object eva
 
 If your installed OpenFeature version types the provider differently, the provider still works at runtime. A small cast is enough.
 
-## PostHog flags as a source
+## PostHog flags drive next
 
-You can keep records in PostHog as the JSON payload of a feature flag. Versimo does the bucketing, so set the PostHog flag itself to 100% rollout and use it only to carry the record.
+PostHog can hold the share of users on next for each module, so a rollout change needs no deploy and no record write. Versimo still does the bucketing: PostHog says how many users get next, `bucketFor` says which ones. A user lands on the same version in every language, with or without PostHog.
+
+Set up one PostHog flag per module:
+
+- Key `versimo-<module>`, for example `versimo-billing`.
+- Release condition 100% of users. Do not use PostHog's own percentage.
+- Payload `{"rollout": 25}`, a whole number from 0 to 100.
+
+```ts
+import { createClient, postHogRollout } from 'versimo';
+
+const versimo = createClient({
+  source: 'https://example.com/versimo/',
+  rollout: postHogRollout({
+    apiKey: process.env.POSTHOG_PROJECT_KEY!, // phc_..., the public project key
+    host: 'https://eu.i.posthog.com',          // the default, or https://us.i.posthog.com for US projects
+  }),
+});
+```
+
+How the flag is read:
+
+| PostHog | Share on next |
+| --- | --- |
+| Payload `{"rollout": n}` | n |
+| Flag on, no usable payload | the record's `rollout` |
+| Flag on but not served (off for the `versimo` id) | 0, everyone leaves next |
+| Flag missing, disabled in PostHog, or PostHog down | the record's `rollout` |
+
+Health always wins. When `healthy` is false users get last, whatever PostHog says.
+
+One request to `/flags?v=2` serves every module, once per TTL (30 seconds by default). When PostHog cannot be reached the last good answer is kept, and with none the record's own rollout is used.
+
+No user data goes to PostHog. The request carries only the project key and the fixed distinct id `versimo`. User ids stay in the app.
+
+The same works in Python (`Client(source, rollout=PostHogRollout(api_key))`) and Go (`ClientOptions{Rollout: rollout}` with `NewPostHogRollout`).
+
+You can also keep the whole record in the flag payload and use PostHog as the source. The `rollout` field of that record is read the same way.
 
 ```ts
 import { PostHog } from 'posthog-node';
 import { createClient, type ModuleRecord } from 'versimo';
 
-const posthog = new PostHog(process.env.POSTHOG_API_KEY!);
+const posthog = new PostHog(process.env.POSTHOG_PROJECT_KEY!);
 
 const versimo = createClient({
   source: async (module) => {

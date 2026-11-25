@@ -4,6 +4,14 @@ export { draftNext, promote, rollback, setRollout } from './transitions.js';
 export { validateRecord, type ValidationResult } from './validate.js';
 export { compareSemver, isSemver, parseSemver, SEMVER_PATTERN, type ParsedSemver } from './semver.js';
 export { createClient, type ClientOptions, type SourceFn, type VersimoClient } from './client.js';
+export {
+  postHogFlagKey,
+  postHogRollout,
+  rolloutFromFlag,
+  POSTHOG_DISTINCT_ID,
+  type PostHogRolloutOptions,
+  type RolloutFn,
+} from './posthog.js';
 export { VersimoProvider, type EvaluationContext, type ResolutionDetails } from './provider.js';
 export {
   VersimoError,

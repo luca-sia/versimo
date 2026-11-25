@@ -4,6 +4,7 @@
   "notes": {
     "transitions": "Each case gives the input record, an op, its args, an optional by, and a fixed now. expected is the output record, or error is the error code.",
     "resolve": "userId null means no user id. An empty string also means no user.",
+    "posthog": "flag is one entry of a PostHog /flags?v=2 answer, or null when the flag is absent. rollout is the share on next it gives, or null to keep the record rollout.",
     "validation": "errors lists the field named at the start of each error message, in order."
   },
   "bucket": [
@@ -3177,5 +3178,238 @@
         "valid": false
       }
     ]
-  }
+  },
+  "posthog": [
+    {
+      "name": "no flag",
+      "flag": null,
+      "rollout": null
+    },
+    {
+      "name": "flag off",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": false
+      },
+      "rollout": 0
+    },
+    {
+      "name": "flag off ignores payload",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": false,
+        "metadata": {
+          "payload": "{\"rollout\":50}"
+        }
+      },
+      "rollout": 0
+    },
+    {
+      "name": "flag on, no payload",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true
+      },
+      "rollout": null
+    },
+    {
+      "name": "payload as JSON string",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":25}"
+        }
+      },
+      "rollout": 25
+    },
+    {
+      "name": "payload as object",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": {
+            "rollout": 25
+          }
+        }
+      },
+      "rollout": 25
+    },
+    {
+      "name": "rollout 0",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":0}"
+        }
+      },
+      "rollout": 0
+    },
+    {
+      "name": "rollout 100",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":100}"
+        }
+      },
+      "rollout": 100
+    },
+    {
+      "name": "rollout 101 is ignored",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":101}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "rollout -1 is ignored",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":-1}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "rollout 25.0 counts as 25",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":25.0}"
+        }
+      },
+      "rollout": 25
+    },
+    {
+      "name": "rollout true is ignored",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":true}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "rollout 12.5 is ignored",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":12.5}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "rollout as text is ignored",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":\"25\"}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "payload not JSON",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "rollout 25"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "payload is a number",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "25"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "payload has no rollout",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"share\":25}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "payload null",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": null
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "whole record as payload",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"module\":\"billing\",\"last\":\"2.3.1\",\"current\":\"2.4.0\",\"next\":\"2.5.0\",\"rollout\":30,\"healthy\":true,\"updatedAt\":\"2026-03-12T09:30:00Z\"}"
+        }
+      },
+      "rollout": 30
+    },
+    {
+      "name": "extra payload fields",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": true,
+        "metadata": {
+          "payload": "{\"rollout\":40,\"note\":\"Friday\"}"
+        }
+      },
+      "rollout": 40
+    },
+    {
+      "name": "enabled missing",
+      "flag": {
+        "key": "versimo-billing",
+        "metadata": {
+          "payload": "{\"rollout\":25}"
+        }
+      },
+      "rollout": null
+    },
+    {
+      "name": "enabled as text",
+      "flag": {
+        "key": "versimo-billing",
+        "enabled": "true",
+        "metadata": {
+          "payload": "{\"rollout\":25}"
+        }
+      },
+      "rollout": null
+    }
+  ]
 }

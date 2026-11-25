@@ -59,6 +59,11 @@ class VectorTests(unittest.TestCase):
             with self.subTest(value=c["value"]):
                 self.assertEqual(versimo.is_semver(c["value"]), c["valid"])
 
+    def test_posthog(self):
+        for c in VECTORS["posthog"]:
+            with self.subTest(c["name"]):
+                self.assertEqual(versimo.rollout_from_flag(c["flag"]), c["rollout"])
+
 
 if __name__ == "__main__":
     unittest.main()

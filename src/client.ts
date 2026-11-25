@@ -1,6 +1,7 @@
 import { resolve } from './resolve.js';
 import { validateRecord } from './validate.js';
 import { VersimoError, type Context, type ModuleRecord, type Resolution } from './types.js';
+import type { RolloutFn } from './posthog.js';
 
 export type SourceFn = (module: string) => ModuleRecord | null | undefined | Promise<ModuleRecord | null | undefined>;
 
@@ -17,6 +18,12 @@ export interface ClientOptions {
   now?: () => number;
   /** Fetch implementation for URL sources. Defaults to the global `fetch`. */
   fetch?: typeof fetch;
+  /**
+   * Overrides the record's `rollout`, for example `postHogRollout(...)`.
+   * Only the share changes. Who lands on `next` is still decided by `bucketFor`.
+   * When it returns null or fails, the record's own rollout is used.
+   */
+  rollout?: RolloutFn;
 }
 
 export interface VersimoClient {
@@ -65,7 +72,23 @@ export function createClient(options: ClientOptions): VersimoClient {
     return raw;
   }
 
+  async function withRollout(rec: ModuleRecord): Promise<ModuleRecord> {
+    if (!options.rollout) return rec;
+    let share: number | null | undefined;
+    try {
+      share = await options.rollout(rec.module);
+    } catch {
+      return rec;
+    }
+    if (typeof share !== 'number' || !Number.isInteger(share) || share < 0 || share > 100) return rec;
+    return share === rec.rollout ? rec : { ...rec, rollout: share };
+  }
+
   async function record(module: string): Promise<ModuleRecord> {
+    return withRollout(await stored(module));
+  }
+
+  async function stored(module: string): Promise<ModuleRecord> {
     if (!SLUG.test(module)) throw new VersimoError('INVALID_INPUT', `Invalid module slug: ${JSON.stringify(module)}`);
     const hit = cache.get(module);
     if (hit && hit.expires > now()) return hit.record;
