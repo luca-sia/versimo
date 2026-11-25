@@ -41,7 +41,11 @@ class VectorsTest {
             val name = c["name"] as String
             val record = ModuleRecord.fromMap(c["record"])
             val args = map(c["args"])
-            val opts = TransitionOptions(c["by"] as String?, Instant.parse(c["now"] as String).toEpochMilli())
+            val opts = TransitionOptions(
+                c["by"] as String?,
+                Instant.parse(c["now"] as String).toEpochMilli(),
+                c["reason"] as String?,
+            )
             val run = {
                 when (c["op"]) {
                     "promote" -> promote(record, opts)
@@ -74,6 +78,59 @@ class VectorsTest {
             val r = validateRecord(c["record"])
             assertEquals(c["ok"], r.ok, name)
             assertEquals(c["errors"], r.errors.map { it.substringBefore(' ') }, name)
+        }
+    }
+
+    /** Thrown when the Kotlin types rule out a vector input, such as a fraction for a count. */
+    private class TypeRuledOut : RuntimeException()
+
+    private fun num(v: Any?): Double? = when (v) {
+        null -> null
+        is Number -> v.toDouble()
+        else -> throw TypeRuledOut()
+    }
+
+    private fun count(v: Any?): Int? = when (v) {
+        null -> null
+        is Long -> v.toInt()
+        else -> throw TypeRuledOut()
+    }
+
+    @Test
+    fun health() {
+        for (c in list("health")) {
+            val name = c["name"] as String
+            val error = c["error"] as String?
+            val ch = map(c["checks"])
+            val ob = map(c["observation"])
+            val checks: HealthChecks
+            val obs: HealthObservation
+            try {
+                val url = ch["url"]
+                if (url != null && url !is String) throw TypeRuledOut()
+                checks = HealthChecks(num(ch["maxErrorRate"]), num(ch["maxLatencyMs"]), url as String?, count(ch["minRequests"]))
+                obs = HealthObservation(count(ob["requests"]), count(ob["errors"]), num(ob["latencyMs"]), count(ob["urlStatus"]))
+            } catch (e: TypeRuledOut) {
+                assertEquals("INVALID_INPUT", error, "$name: input the types reject should be an error case")
+                continue
+            }
+            val record = ModuleRecord.fromMap(c["record"])
+            val opts = TransitionOptions(c["by"] as String?, Instant.parse(c["now"] as String).toEpochMilli())
+            if (error != null) {
+                val ex = assertFailsWith<VersimoException>(name) { checkHealth(record, checks, obs, opts) }
+                assertEquals(error, ex.code.name, name)
+                continue
+            }
+            val r = checkHealth(record, checks, obs, opts)
+            val e = map(c["expected"])
+            val v = map(e["verdict"])
+            assertEquals(e["record"], Json.parse(r.record.toJson()), name)
+            assertEquals(e["rolledBack"], r.rolledBack, name)
+            assertEquals(v["healthy"], r.verdict.healthy, name)
+            val want = (v["failures"] as List<Map<String, Any?>>).map {
+                HealthFailure(it["check"] as String, num(it["value"])!!, num(it["limit"]))
+            }
+            assertEquals(want, r.verdict.failures, name)
         }
     }
 

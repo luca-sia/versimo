@@ -20,7 +20,7 @@ private fun apply(
     change: (ModuleRecord, String) -> ModuleRecord,
 ): ModuleRecord {
     val at = stamp(options)
-    val entry = HistoryEntry(at, action, from, to, options.by)
+    val entry = HistoryEntry(at, action, from, to, options.by, options.reason)
     return change(record, at).copy(updatedAt = at, history = (record.history ?: emptyList()) + entry)
 }
 

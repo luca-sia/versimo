@@ -23,7 +23,7 @@ class VectorTests(unittest.TestCase):
     def test_transitions(self):
         for c in VECTORS["transitions"]:
             with self.subTest(c["name"]):
-                kw = {"now": c["now"], "by": c.get("by")}
+                kw = {"now": c["now"], "by": c.get("by"), "reason": c.get("reason")}
                 args = c["args"]
 
                 def run():
@@ -50,6 +50,29 @@ class VectorTests(unittest.TestCase):
                 r = versimo.validate_record(c["record"])
                 self.assertEqual(r.ok, c["ok"])
                 self.assertEqual([e.split(" ")[0] for e in r.errors], c["errors"])
+
+    def test_health(self):
+        for c in VECTORS["health"]:
+            with self.subTest(c["name"]):
+
+                def run():
+                    return versimo.check_health(
+                        c["record"], c["checks"], c["observation"], by=c.get("by"), now=c["now"]
+                    )
+
+                if "error" in c:
+                    with self.assertRaises(versimo.VersimoError) as ctx:
+                        run()
+                    self.assertEqual(ctx.exception.code, c["error"])
+                    continue
+                before = json.dumps(c["record"], sort_keys=True)
+                r = run()
+                e = c["expected"]
+                self.assertEqual(r.record, e["record"])
+                self.assertEqual(r.verdict.healthy, e["verdict"]["healthy"])
+                self.assertEqual(r.verdict.failures, e["verdict"]["failures"])
+                self.assertEqual(r.rolled_back, e["rolledBack"])
+                self.assertEqual(json.dumps(c["record"], sort_keys=True), before, "input was changed")
 
     def test_semver(self):
         for c in VECTORS["semver"]["compare"]:

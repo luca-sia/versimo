@@ -14,7 +14,7 @@ private func applying(
     var out = record
     change(&out)
     out.updatedAt = at
-    out.history = (record.history ?? []) + [HistoryEntry(at: at, action: action, from: from, to: to, by: options.by)]
+    out.history = (record.history ?? []) + [HistoryEntry(at: at, action: action, from: from, to: to, by: options.by, reason: options.reason)]
     return out
 }
 

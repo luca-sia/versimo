@@ -44,13 +44,15 @@ public struct HistoryEntry: Equatable, Sendable {
     public var from: String?
     public var to: String?
     public var by: String?
+    public var reason: String?
 
-    public init(at: String, action: String, from: String?, to: String?, by: String? = nil) {
+    public init(at: String, action: String, from: String?, to: String?, by: String? = nil, reason: String? = nil) {
         self.at = at
         self.action = action
         self.from = from
         self.to = to
         self.by = by
+        self.reason = reason
     }
 }
 
@@ -95,7 +97,10 @@ public struct ModuleRecord: Equatable, Sendable {
         if case .array(let items)? = o["history"] {
             entries = items.compactMap { item in
                 guard case .object(let e) = item, let at = text(e["at"]), let action = text(e["action"]) else { return nil }
-                return HistoryEntry(at: at, action: action, from: text(e["from"]), to: text(e["to"]), by: text(e["by"]))
+                return HistoryEntry(
+                    at: at, action: action, from: text(e["from"]), to: text(e["to"]), by: text(e["by"]),
+                    reason: text(e["reason"])
+                )
             }
         }
         guard case .number(let rollout)? = o["rollout"], case .bool(let healthy)? = o["healthy"] else {
@@ -135,6 +140,7 @@ public struct ModuleRecord: Equatable, Sendable {
             o["history"] = .array(history.map { e in
                 var h: [String: JSONValue] = ["at": .string(e.at), "action": .string(e.action), "from": opt(e.from), "to": opt(e.to)]
                 if let by = e.by { h["by"] = .string(by) }
+                if let reason = e.reason { h["reason"] = .string(reason) }
                 return .object(h)
             })
         }
@@ -148,12 +154,15 @@ public struct ModuleRecord: Equatable, Sendable {
 }
 
 /// Options shared by the functions that change a record. `now` defaults to the current time.
+/// `reason` says why the change was made and is recorded in history.
 public struct TransitionOptions: Sendable {
     public var by: String?
     public var now: Date?
+    public var reason: String?
 
-    public init(by: String? = nil, now: Date? = nil) {
+    public init(by: String? = nil, now: Date? = nil, reason: String? = nil) {
         self.by = by
         self.now = now
+        self.reason = reason
     }
 }

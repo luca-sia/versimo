@@ -43,6 +43,7 @@ No other fields are allowed.
 | `from` | string or null | yes | Value before the change |
 | `to` | string or null | yes | Value after the change |
 | `by` | string | no | Who made the change |
+| `reason` | string | no | Why. An automatic rollback writes the failed checks, for example `health: errorRate` |
 
 For `draft`, `promote`, `rollback` and `patch`, `from` and `to` are versions. For `rollout` they are the old and new percentages as strings, for example `"10"` and `"25"`.
 

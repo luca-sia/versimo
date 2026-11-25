@@ -24,7 +24,7 @@ var (
 var (
 	actions   = []string{"draft", "promote", "rollback", "rollout", "patch"}
 	keys      = []string{"$schema", "module", "last", "current", "next", "rollout", "healthy", "updatedAt", "history"}
-	entryKeys = []string{"at", "action", "from", "to", "by"}
+	entryKeys = []string{"at", "action", "from", "to", "by", "reason"}
 )
 
 func contains(list []string, s string) bool {
@@ -97,6 +97,11 @@ func checkEntry(entry any, path string, errs *[]string) {
 	if by, present := e["by"]; present {
 		if _, ok := by.(string); !ok {
 			*errs = append(*errs, path+".by must be a string")
+		}
+	}
+	if reason, present := e["reason"]; present {
+		if _, ok := reason.(string); !ok {
+			*errs = append(*errs, path+".reason must be a string")
 		}
 	}
 }

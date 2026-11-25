@@ -34,6 +34,7 @@ type vectors struct {
 		Record   map[string]any `json:"record"`
 		Now      string         `json:"now"`
 		By       string         `json:"by"`
+		Reason   string         `json:"reason"`
 		Expected map[string]any `json:"expected"`
 		Error    string         `json:"error"`
 	} `json:"transitions"`
@@ -59,6 +60,16 @@ type vectors struct {
 		Flag    any    `json:"flag"`
 		Rollout *int   `json:"rollout"`
 	} `json:"posthog"`
+	Health []struct {
+		Name        string          `json:"name"`
+		Record      map[string]any  `json:"record"`
+		Checks      json.RawMessage `json:"checks"`
+		Observation json.RawMessage `json:"observation"`
+		Now         string          `json:"now"`
+		By          string          `json:"by"`
+		Expected    map[string]any  `json:"expected"`
+		Error       string          `json:"error"`
+	} `json:"health"`
 }
 
 func loadVectors(t *testing.T) vectors {
@@ -111,7 +122,7 @@ func TestTransitionVectors(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		opts := TransitionOptions{By: c.By, Now: now}
+		opts := TransitionOptions{By: c.By, Now: now, Reason: c.Reason}
 		rec := toRecord(t, c.Record)
 		before, _ := json.Marshal(rec)
 
@@ -205,6 +216,47 @@ func TestPostHogVectors(t *testing.T) {
 			}
 		} else if !ok || got != *c.Rollout {
 			t.Errorf("%s: got %d %v, want %d", c.Name, got, ok, *c.Rollout)
+		}
+	}
+}
+
+func TestHealthVectors(t *testing.T) {
+	for _, c := range loadVectors(t).Health {
+		now, err := time.Parse(time.RFC3339Nano, c.Now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var checks HealthChecks
+		var obs HealthObservation
+		if json.Unmarshal(c.Checks, &checks) != nil || json.Unmarshal(c.Observation, &obs) != nil {
+			// The Go types rule out this input, such as a fraction for a count or a string limit.
+			if c.Error != string(CodeInvalidInput) {
+				t.Errorf("%s: input the types reject should be an error case", c.Name)
+			}
+			continue
+		}
+		rec := toRecord(t, c.Record)
+		before, _ := json.Marshal(rec)
+		res, err := CheckHealth(rec, checks, obs, TransitionOptions{By: c.By, Now: now})
+		if c.Error != "" {
+			var ve *Error
+			if !errors.As(err, &ve) || string(ve.Code) != c.Error {
+				t.Errorf("%s: want error %s, got %v", c.Name, c.Error, err)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: %v", c.Name, err)
+			continue
+		}
+		var got map[string]any
+		bytes, _ := json.Marshal(res)
+		_ = json.Unmarshal(bytes, &got)
+		if !reflect.DeepEqual(got, c.Expected) {
+			t.Errorf("%s:\n got  %v\n want %v", c.Name, got, c.Expected)
+		}
+		if after, _ := json.Marshal(rec); string(after) != string(before) {
+			t.Errorf("%s: input record was changed", c.Name)
 		}
 	}
 }

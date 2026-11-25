@@ -79,9 +79,25 @@ Moves `next` to `current` and `current` to `last`. Empties `next`, sets `rollout
 
 Sets `current` to `last`. Sets `last` and `next` to null, `rollout` to 0 and `healthy` to true. Throws when `last` is null.
 
+All four take `opts.by` and `opts.reason`, which are written to the history entry.
+
 ### `setRollout(record, n, opts?)`
 
 Sets `rollout` to `n`, an integer from 0 to 100. Throws when `n` is above 0 and `next` is null.
+
+## Health
+
+### `evaluateHealth(checks, observation)`
+
+Judges one observation against the checks and returns `{ healthy, failures }`. Each failure is `{ check, value, limit }`, with `check` one of `errorRate`, `latency` or `url`, in that order. Throws `INVALID_INPUT` for a bad limit or a bad measurement.
+
+### `checkHealth(record, checks, observation, opts?)`
+
+Runs `evaluateHealth`. When current fails and there is a last, it returns the rolled back record with `rolledBack: true`. The history entry has `by` (default `versimo-health`) and `reason`, for example `health: errorRate, latency`. With no last the record comes back unchanged. Returns `{ record, verdict, rolledBack }`.
+
+### `createHealthMonitor(options)`
+
+Runs the checks on its own: reads the record from your store, measures, rolls back, writes the record and alerts. `check(module)` runs once. `start(modules, everyMs?)` runs on a timer and returns a stop function. See [Health checks](health.md) for the options.
 
 ## Validating
 

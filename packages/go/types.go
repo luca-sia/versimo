@@ -10,6 +10,7 @@ type HistoryEntry struct {
 	From   *string `json:"from"`
 	To     *string `json:"to"`
 	By     string  `json:"by,omitempty"`
+	Reason string  `json:"reason,omitempty"`
 }
 
 // ModuleRecord is the release state of one module. Last and Next are nil for null.
@@ -34,10 +35,11 @@ type Resolution struct {
 }
 
 // TransitionOptions are shared by the functions that change a record.
-// A zero Now means the current time. An empty By is not recorded.
+// A zero Now means the current time. An empty By or Reason is not recorded.
 type TransitionOptions struct {
-	By  string
-	Now time.Time
+	By     string
+	Now    time.Time
+	Reason string
 }
 
 // Ptr returns a pointer to v. It is handy for the Last and Next fields.

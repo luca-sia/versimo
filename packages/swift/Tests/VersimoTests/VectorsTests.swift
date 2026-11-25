@@ -68,7 +68,9 @@ final class VectorsTests: XCTestCase {
             let name = c["name"]?.text ?? ""
             let record = try ModuleRecord(json: try XCTUnwrap(c["record"]))
             let args = try XCTUnwrap(c["args"])
-            let options = TransitionOptions(by: c["by"]?.text, now: try parseDate(try XCTUnwrap(c["now"]?.text)))
+            let options = TransitionOptions(
+                by: c["by"]?.text, now: try parseDate(try XCTUnwrap(c["now"]?.text)), reason: c["reason"]?.text
+            )
             let op = c["op"]?.text ?? ""
 
             func run() throws -> ModuleRecord {
@@ -108,6 +110,66 @@ final class VectorsTests: XCTestCase {
             XCTAssertEqual(r.ok, c["ok"]?.bool, name)
             let fields = r.errors.map { String($0.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false)[0]) }
             XCTAssertEqual(fields, c["errors"]?.items.compactMap { $0.text }, name)
+        }
+    }
+
+    /// Thrown when the Swift types rule out a vector input, such as a fraction for a count.
+    private struct TypeRuledOut: Error {}
+
+    private func number(_ v: JSONValue?) throws -> Double? {
+        switch v {
+        case nil, .null?: return nil
+        case .number(let d)?: return d
+        default: throw TypeRuledOut()
+        }
+    }
+
+    private func count(_ v: JSONValue?) throws -> Int? {
+        guard let d = try number(v) else { return nil }
+        guard d == d.rounded(.towardZero) else { throw TypeRuledOut() }
+        return Int(d)
+    }
+
+    func testHealth() throws {
+        for c in try XCTUnwrap(loadVectors()["health"]).items {
+            let name = c["name"]?.text ?? ""
+            let code = c["error"]?.text
+            let ch = try XCTUnwrap(c["checks"])
+            let ob = try XCTUnwrap(c["observation"])
+            let checks: HealthChecks
+            let observation: HealthObservation
+            do {
+                if let url = ch["url"], url.text == nil { throw TypeRuledOut() }
+                checks = HealthChecks(
+                    maxErrorRate: try number(ch["maxErrorRate"]), maxLatencyMs: try number(ch["maxLatencyMs"]),
+                    url: ch["url"]?.text, minRequests: try count(ch["minRequests"])
+                )
+                observation = HealthObservation(
+                    requests: try count(ob["requests"]), errors: try count(ob["errors"]),
+                    latencyMs: try number(ob["latencyMs"]), urlStatus: try count(ob["urlStatus"])
+                )
+            } catch is TypeRuledOut {
+                XCTAssertEqual(code, "INVALID_INPUT", "\(name): input the types reject should be an error case")
+                continue
+            }
+            let record = try ModuleRecord(json: try XCTUnwrap(c["record"]))
+            let options = TransitionOptions(by: c["by"]?.text, now: try parseDate(try XCTUnwrap(c["now"]?.text)))
+            if let code {
+                XCTAssertThrowsError(try checkHealth(record, checks: checks, observation: observation, options: options), name) { error in
+                    XCTAssertEqual((error as? VersimoError)?.code.rawValue, code, name)
+                }
+                continue
+            }
+            let r = try checkHealth(record, checks: checks, observation: observation, options: options)
+            let e = try XCTUnwrap(c["expected"])
+            let v = try XCTUnwrap(e["verdict"])
+            XCTAssertEqual(r.record.jsonValue, e["record"], name)
+            XCTAssertEqual(r.rolledBack, e["rolledBack"]?.bool, name)
+            XCTAssertEqual(r.verdict.healthy, v["healthy"]?.bool, name)
+            let want = try XCTUnwrap(v["failures"]).items.map { f in
+                HealthFailure(check: f["check"]?.text ?? "", value: try number(f["value"]) ?? .nan, limit: try number(f["limit"]))
+            }
+            XCTAssertEqual(r.verdict.failures, want, name)
         }
     }
 
