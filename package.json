@@ -1,0 +1,50 @@
+{
+  "name": "@versimo/sdk",
+  "version": "0.1.0",
+  "description": "Release model with no staging. Resolve last, current and next versions of a module for each user.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Lucasia Ltd",
+  "homepage": "https://versimo.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luca-sia/versimo-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/luca-sia/versimo-sdk/issues"
+  },
+  "keywords": ["release", "rollout", "feature-flags", "openfeature", "versioning"],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": "./schema/module-record.schema.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

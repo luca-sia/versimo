@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://versimo.dev/schema/module-record.schema.json",
+  "title": "Versimo module record",
+  "description": "The release state of one module: last, current and next versions, and the share of users on next.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["module", "last", "current", "next", "rollout", "healthy", "updatedAt"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "module": {
+      "description": "Lower-case slug.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "last": { "description": "Previous current. The rollback target.", "oneOf": [{ "$ref": "#/$defs/semver" }, { "type": "null" }] },
+    "current": { "description": "The version most users get.", "$ref": "#/$defs/semver" },
+    "next": { "description": "The version in UAT on live.", "oneOf": [{ "$ref": "#/$defs/semver" }, { "type": "null" }] },
+    "rollout": {
+      "description": "Share of users on next, as a whole percentage.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "healthy": { "description": "Health of current. When false, users fall back to last.", "type": "boolean" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "action", "from", "to"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "action": { "enum": ["draft", "promote", "rollback", "rollout", "patch"] },
+          "from": { "type": ["string", "null"] },
+          "to": { "type": ["string", "null"] },
+          "by": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://versimo.dev/schema/module-record.schema.json",
+  "module": "billing",
+  "last": "2.3.1",
+  "current": "2.4.0",
+  "next": "2.5.0",
+  "rollout": 10,
+  "healthy": true,
+  "updatedAt": "2026-03-12T09:30:00Z",
+  "history": [
+    { "at": "2026-02-20T10:00:00Z", "action": "promote", "from": "2.3.1", "to": "2.4.0", "by": "alex" },
+    { "at": "2026-03-10T14:00:00Z", "action": "draft", "from": "2.4.0", "to": "2.5.0", "by": "alex" },
+    { "at": "2026-03-12T09:30:00Z", "action": "rollout", "from": "0", "to": "10", "by": "alex" }
+  ]
+}
