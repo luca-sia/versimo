@@ -2,6 +2,10 @@
 
 All notable changes are listed here. This project follows [semver](https://semver.org).
 
+## Unreleased
+
+- Health checks and automatic rollback: `evaluateHealth`, `checkUrl` and `applyHealth` (TypeScript, ports follow)
+
 ## 0.2.0
 
 - Versimo for Python, Go, Kotlin and Swift, in `packages/`

@@ -49,6 +49,14 @@ While `healthy` is `false`, every user gets last. This is the automatic step bac
 
 `rollback` makes the step back permanent in the record. Last becomes current. The failed version and any drafted next are dropped, so there is nothing to roll back to until the next promote.
 
+## Health and automatic rollback
+
+Versimo can also judge health and step back for you. Feed `evaluateHealth` the numbers you already collect: requests, errors, p95 latency and any custom checks, such as `checkUrl` on a health endpoint. It says whether current is healthy and why not.
+
+Pass the result to `applyHealth`. A healthy result changes nothing. An unhealthy result with a last does the same as `rollback`: last becomes current, `healthy` is true on the restored version, and the history records it with `by: 'versimo-health'`. An unhealthy result with no last sets `healthy` to false, so users get the `UNHEALTHY` path above. Either way `onAlert` is called once, so you can tell someone.
+
+With too few requests the error rate is not judged, because a handful of errors is noise. A failed custom check always counts. Versimo still does not run the checks on a schedule or save the record. That stays with your tooling.
+
 ## Patch
 
 The fix for a failed version ships as a semver patch. After a rollback to `2.3.1`, a fix for `2.4.0` is drafted as `2.4.1`. It goes through the same path as any next: draft, rollout, promote. Pass `{ patch: true }` to `draftNext` to record it as a patch in the history.

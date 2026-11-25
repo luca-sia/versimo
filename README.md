@@ -74,6 +74,28 @@ record = promote(record, { by: 'alex' });
 
 These functions never change the record you pass in. They return a new one with a history entry. Saving it is your job.
 
+## Health and automatic rollback
+
+```ts
+import { applyHealth, checkUrl, evaluateHealth } from 'versimo';
+
+const result = evaluateHealth(
+  {
+    requests: 1200,
+    errors: 90,
+    p95Ms: 420,
+    checks: [await checkUrl('https://billing.example.com/health')],
+  },
+  { maxErrorRate: 0.05, maxP95Ms: 800 },
+);
+
+record = applyHealth(record, result, {
+  onAlert: ({ module, reasons }) => notify(`${module} rolled back: ${reasons.join(', ')}`),
+});
+```
+
+An unhealthy current steps back to last and the history records it. See [concepts](docs/concepts.md#health-and-automatic-rollback).
+
 ## The record
 
 ```json

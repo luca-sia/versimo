@@ -89,6 +89,41 @@ Sets `rollout` to `n`, an integer from 0 to 100. Throws when `n` is above 0 and 
 
 Returns `{ ok: boolean, errors: string[] }`. It never throws. It checks every field, rejects unknown fields, and checks that `next` is above `current`, `last` is below `current`, and `rollout` is 0 when there is no next.
 
+## Health and automatic rollback
+
+### `evaluateHealth(samples, thresholds?)`
+
+Pure. Returns `{ healthy: boolean, reasons: string[] }`.
+
+```ts
+interface HealthSamples {
+  requests: number;
+  errors: number;
+  p95Ms?: number;
+  checks?: { name: string; ok: boolean }[];
+}
+interface HealthThresholds {
+  maxErrorRate?: number; // 0 to 1, default 0.05
+  maxP95Ms?: number;     // not judged when unset
+  minRequests?: number;  // default 20
+}
+```
+
+The error rate is judged only when `requests` is at least `minRequests`, and it fails when it is above `maxErrorRate`. Latency fails when `p95Ms` is above `maxP95Ms`. Every failed custom check counts, whatever the request volume. Throws `INVALID_INPUT` when `maxErrorRate` is outside 0 to 1.
+
+### `checkUrl(url, opts?)`
+
+Returns `{ name: url, ok }`, with `ok` true only for a 2xx response within `timeoutMs` (default 5000). It never throws. A network error, a timeout, a redirect or a non-2xx status gives `ok: false`. Pass `fetch` to replace `globalThis.fetch`. The result fits straight into `samples.checks`.
+
+### `applyHealth(record, result, options?)`
+
+Returns a new record and never changes the one you pass in. `options` takes the same `by` and `now` as the transitions, plus `onAlert`.
+
+- Healthy result: returns the record as it is. It does not set `healthy` back to true. A promote or a rollback does that.
+- Unhealthy result with a `last`: calls `rollback`, so the result is exactly what `rollback` gives. Current becomes last, last and next become null, rollout becomes 0 and `healthy` becomes true on the restored version. The history entry has action `rollback` and `by` set to `options.by`, or `versimo-health` when not given.
+- Unhealthy result with no `last`: sets `healthy` to false and leaves everything else alone. Users stay on current, because there is nothing better to serve, and the resolution reason is `UNHEALTHY`. The history entry has action `rollback`, `from` set to current and `to` set to null, which reads as a step back that had nowhere to go. A record that is already unhealthy is returned unchanged.
+- `onAlert({ module, action, reasons })` is called once, and only when the record changed. `action` is `rollback` or `unhealthy`.
+
 ## Client
 
 ### `createClient(options)`

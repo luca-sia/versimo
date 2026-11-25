@@ -109,3 +109,7 @@ The pattern is the one in `schema/module-record.schema.json`. Compare as the sem
 For transitions, `op` is `promote`, `rollback`, `setRollout` (with `args.n`) or `draftNext` (with `args.version` and an optional `args.patch`). `now` is a fixed time in UTC with milliseconds. A typed port can skip a case that its types rule out, such as a fractional rollout, as long as the type system rejects it.
 
 A new port reads the file from the repository, runs every case, and adds its own tests for the client. Then add a job to `.github/workflows/ci.yml` and a row to the table in the README.
+
+## Health and automatic rollback
+
+`evaluateHealth`, `checkUrl` and `applyHealth` exist in the TypeScript package only. Ports add them later, together with shared test vectors. A port can ignore them until then.

@@ -58,3 +58,38 @@ export class VersimoError extends Error {
     this.code = code;
   }
 }
+
+export interface HealthSamples {
+  requests: number;
+  errors: number;
+  /** 95th percentile latency in milliseconds. */
+  p95Ms?: number;
+  /** Results of custom checks, such as a URL probe. */
+  checks?: { name: string; ok: boolean }[];
+}
+
+export interface HealthThresholds {
+  /** Highest accepted share of failed requests, from 0 to 1. Default 0.05. */
+  maxErrorRate?: number;
+  /** Highest accepted p95 latency in milliseconds. Not judged when unset. */
+  maxP95Ms?: number;
+  /** Fewest requests needed before the error rate is judged. Default 20. */
+  minRequests?: number;
+}
+
+export interface HealthResult {
+  healthy: boolean;
+  reasons: string[];
+}
+
+export interface HealthAlert {
+  module: string;
+  /** `rollback` when current stepped back to last, `unhealthy` when there was no last. */
+  action: 'rollback' | 'unhealthy';
+  reasons: string[];
+}
+
+export interface HealthOptions extends TransitionOptions {
+  /** Called once when applyHealth changes the record. */
+  onAlert?: (alert: HealthAlert) => void;
+}
