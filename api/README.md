@@ -8,7 +8,7 @@ The API behind [versimo.dev/app](https://versimo.dev/app). A Cloudflare Worker o
 
 The site Worker keeps serving everything else.
 
-It signs people in through accounts.lucasia.ai (OpenID Connect, authorisation code with PKCE) and keeps their projects, modules and history in Postgres 18. Module changes go through the Versimo library itself (`draftNext`, `promote`, `rollback`, `setRollout`, `validateRecord`), so the app and the library follow the same rules.
+It signs people in through Lucasia ID, the issuer at `https://lucasia.ai/api/auth` (OpenID Connect, authorisation code with PKCE, state and nonce, the ID token checked against the issuer's published keys) and keeps their projects, modules and history in Postgres 18. Module changes go through the Versimo library itself (`draftNext`, `promote`, `rollback`, `setRollout`, `validateRecord`), so the app and the library follow the same rules.
 
 ## Endpoints
 
@@ -60,7 +60,7 @@ CI runs both, the second against Postgres 18.
 
 These steps change credentials or spend, so they wait for Catalin.
 
-1. **Register the client.** On accounts.lucasia.ai, add a confidential client called Versimo with the redirect URI `https://versimo.dev/app/callback` and the scopes `openid profile email`. If the client id is not `versimo`, change `CLIENT_ID` in `wrangler.jsonc`. Put the client id and secret in 1Password, `LUCASIA/versimo-production`.
+1. **The client.** Lucasia ID has a confidential client called Versimo: redirect URI `https://versimo.dev/app/callback`, scopes `openid profile email`, PKCE required, `client_secret_basic`. Its id is `CLIENT_ID` in `wrangler.jsonc` and its secret is in 1Password, `LUCASIA/versimo-production`.
 2. **Make the database.** On the Postgres 18 server, create a `versimo` database and a `versimo_app` role that owns it, then run the migration:
 
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0001_init.sql

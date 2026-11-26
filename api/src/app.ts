@@ -9,15 +9,13 @@ import {
 } from '../../src/index.js';
 import { parseModuleTag, recordFromTags, verifyWebhookSignature } from '../../src/github/index.js';
 import { githubApp, type GithubConfig } from './github.js';
+import { createOidc, type Oidc } from './oidc.js';
 import { cookie, pkceChallenge, randomToken, readCookie, sign, verify } from './session.js';
 import type { AuditEntry, Store, StoredModule } from './store.js';
 
 export interface Config {
-  /** The OIDC issuer, https://accounts.lucasia.ai. */
+  /** The OIDC issuer, https://lucasia.ai/api/auth. Its endpoints come from discovery. */
   issuer: string;
-  authorizeUrl: string;
-  tokenUrl: string;
-  userinfoUrl: string;
   clientId: string;
   clientSecret: string;
   /** At least 32 characters. Signs the session and sign in cookies. */
@@ -32,6 +30,8 @@ export interface Deps {
   store: Store;
   config: Config;
   fetch?: typeof fetch;
+  /** Pass one to keep discovery and keys between apps. */
+  oidc?: Oidc;
 }
 
 interface Session {
@@ -42,6 +42,7 @@ interface Session {
 
 interface SignIn {
   state: string;
+  nonce: string;
   verifier: string;
   back: string;
 }
@@ -122,6 +123,12 @@ const fromRecord = (r: ModuleRecord): StoredModule => ({
 export function createApp(deps: Deps) {
   const { store, config } = deps;
   const doFetch = deps.fetch ?? fetch;
+  const oidc = deps.oidc ?? createOidc(config.issuer, doFetch);
+
+  function refused(error: unknown, headers: string[]): Response {
+    console.warn(`sign in refused: ${error instanceof Error ? error.message : 'unknown'}`);
+    return redirect('/app?signin=failed', headers);
+  }
 
   async function session(request: Request): Promise<Session | null> {
     return verify<Session>(readCookie(request, SESSION), config.sessionSecret);
@@ -139,20 +146,73 @@ export function createApp(deps: Deps) {
 
   async function login(url: URL): Promise<Response> {
     const state = randomToken();
+    const nonce = randomToken();
     const verifier = randomToken(48);
     const back = safeBack(url.searchParams.get('return'));
-    const target = new URL(config.authorizeUrl);
+    let target: URL;
+    try {
+      target = new URL((await oidc.endpoints()).authorize);
+    } catch (error) {
+      return refused(error, []);
+    }
     target.search = new URLSearchParams({
       response_type: 'code',
       client_id: config.clientId,
       redirect_uri: config.appOrigin + CALLBACK,
       scope: 'openid profile email',
       state,
+      nonce,
       code_challenge: await pkceChallenge(verifier),
       code_challenge_method: 'S256',
     }).toString();
-    const signIn = await sign({ state, verifier, back } satisfies SignIn, config.sessionSecret, SIGN_IN_TTL);
+    const signIn = await sign({ state, nonce, verifier, back } satisfies SignIn, config.sessionSecret, SIGN_IN_TTL);
     return redirect(target.toString(), [cookie(SIGN_IN, signIn, CALLBACK, SIGN_IN_TTL)]);
+  }
+
+  /** Swaps the code for tokens, checks the ID token and reads the profile of the same subject. */
+  async function identify(code: string, signIn: SignIn) {
+    const endpoints = await oidc.endpoints();
+    // client_secret_basic: both halves are form encoded before the base64 (RFC 6749, 2.3.1).
+    const basic = btoa(`${encodeURIComponent(config.clientId)}:${encodeURIComponent(config.clientSecret)}`);
+    const tokenResponse = await doFetch(endpoints.token, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        authorization: `Basic ${basic}`,
+        'content-type': 'application/x-www-form-urlencoded',
+        accept: 'application/json',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: config.appOrigin + CALLBACK,
+        code_verifier: signIn.verifier,
+      }),
+    });
+    if (!tokenResponse.ok) throw new Error(`token-${tokenResponse.status}`);
+    const tokens = (await tokenResponse.json()) as { access_token?: unknown; id_token?: unknown };
+    const subject = await oidc.subject(tokens.id_token, { clientId: config.clientId, nonce: signIn.nonce });
+    if (typeof tokens.access_token !== 'string') throw new Error('access-token-missing');
+
+    // The issuer keeps name and email out of the ID token, so they come from userinfo.
+    const infoResponse = await doFetch(endpoints.userinfo, {
+      redirect: 'manual',
+      headers: { authorization: `Bearer ${tokens.access_token}`, accept: 'application/json' },
+    });
+    if (!infoResponse.ok) throw new Error(`userinfo-${infoResponse.status}`);
+    const info = (await infoResponse.json()) as {
+      sub?: unknown;
+      email?: unknown;
+      email_verified?: unknown;
+      name?: unknown;
+    };
+    if (info.sub !== subject) throw new Error('userinfo-subject');
+    return {
+      issuer: config.issuer,
+      subject,
+      email: info.email_verified === true && typeof info.email === 'string' ? info.email : null,
+      name: typeof info.name === 'string' ? info.name : null,
+    };
   }
 
   async function callback(request: Request, url: URL): Promise<Response> {
@@ -160,40 +220,18 @@ export function createApp(deps: Deps) {
     if (url.searchParams.get('error')) return redirect('/app?signin=cancelled', [clear]);
     const signIn = await verify<SignIn>(readCookie(request, SIGN_IN), config.sessionSecret);
     const code = url.searchParams.get('code');
-    if (!signIn || !code || url.searchParams.get('state') !== signIn.state) {
+    if (!signIn?.nonce || !code || url.searchParams.get('state') !== signIn.state) {
       return redirect('/app?signin=expired', [clear]);
     }
 
-    const tokenResponse = await doFetch(config.tokenUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: config.appOrigin + CALLBACK,
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        code_verifier: signIn.verifier,
-      }),
-    });
-    if (!tokenResponse.ok) return redirect('/app?signin=failed', [clear]);
-    const tokens = (await tokenResponse.json()) as { access_token?: unknown };
-    if (typeof tokens.access_token !== 'string') return redirect('/app?signin=failed', [clear]);
+    let identity: Awaited<ReturnType<typeof identify>>;
+    try {
+      identity = await identify(code, signIn);
+    } catch (error) {
+      return refused(error, [clear]);
+    }
 
-    // Userinfo, called with the access token over TLS, is the identity we trust.
-    const infoResponse = await doFetch(config.userinfoUrl, {
-      headers: { authorization: `Bearer ${tokens.access_token}`, accept: 'application/json' },
-    });
-    if (!infoResponse.ok) return redirect('/app?signin=failed', [clear]);
-    const info = (await infoResponse.json()) as { sub?: unknown; email?: unknown; name?: unknown };
-    if (typeof info.sub !== 'string' || info.sub === '') return redirect('/app?signin=failed', [clear]);
-
-    const user = await store.upsertUser({
-      issuer: config.issuer,
-      subject: info.sub,
-      email: typeof info.email === 'string' ? info.email : null,
-      name: typeof info.name === 'string' ? info.name : null,
-    });
+    const user = await store.upsertUser(identity);
     const token = await sign(
       { uid: user.id, name: user.name, email: user.email } satisfies Session,
       config.sessionSecret,

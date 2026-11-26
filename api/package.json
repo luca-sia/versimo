@@ -2,7 +2,7 @@
   "name": "versimo-api",
   "private": true,
   "type": "module",
-  "description": "The versimo.dev app API: sign in through accounts.lucasia.ai, saved projects and modules on Postgres.",
+  "description": "The versimo.dev app API: sign in through Lucasia ID, saved projects and modules on Postgres.",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
