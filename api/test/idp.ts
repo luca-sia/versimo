@@ -1,6 +1,6 @@
 /** A fake issuer for the tests: discovery, keys, and a token endpoint that signs real RS256 ID tokens. */
 
-import { b64url } from '../src/session.js';
+import { b64url, pkceChallenge } from '../src/session.js';
 
 export const ISSUER = 'https://accounts.example/api/auth';
 const RSA = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
@@ -17,6 +17,8 @@ const part = (value: object) => b64url(new TextEncoder().encode(JSON.stringify(v
 export interface Tamper {
   claims?: Record<string, unknown>;
   header?: Record<string, unknown>;
+  /** Changes the published key. */
+  jwk?: Record<string, unknown>;
   /** Signs with this key instead of the published one. */
   signWith?: CryptoKey;
   discovery?: Record<string, unknown>;
@@ -31,8 +33,9 @@ export interface FakeIdp {
   rotate(): Promise<void>;
 }
 
-/** The code the fake accepts. It carries the nonce, as the issuer's stored code would. */
-export const goodCode = (nonce: string) => `good-code.${nonce}`;
+/** The code the fake accepts for a sign in. It carries the nonce and challenge, as the issuer's stored code would. */
+export const goodCode = (authorize: URL) =>
+  `good-code.${authorize.searchParams.get('nonce')}.${authorize.searchParams.get('code_challenge')}`;
 
 export function fakeIdp(sub = 'user-catalin', name = 'Catalin', tamper: Tamper = {}): FakeIdp {
   const calls: FakeIdp['calls'] = [];
@@ -55,11 +58,14 @@ export function fakeIdp(sub = 'user-catalin', name = 'Catalin', tamper: Tamper =
     }
     if (url === `${ISSUER}/jwks`) {
       const jwk = await crypto.subtle.exportKey('jwk', (await keys()).publicKey);
-      return Response.json({ keys: [{ ...jwk, kid: `key-${kid}` }] });
+      return Response.json({ keys: [{ ...jwk, kid: `key-${kid}`, ...tamper.jwk }] });
     }
     if (url === `${ISSUER}/oauth2/token`) {
-      const [code, nonce] = (new URLSearchParams(String(init?.body)).get('code') ?? '').split('.');
-      if (code !== 'good-code') return new Response('{"error":"invalid_grant"}', { status: 400 });
+      const form = new URLSearchParams(String(init?.body));
+      const [code, nonce, challenge] = (form.get('code') ?? '').split('.');
+      if (code !== 'good-code' || (await pkceChallenge(form.get('code_verifier') ?? '')) !== challenge) {
+        return new Response('{"error":"invalid_grant"}', { status: 400 });
+      }
       const now = Math.floor(Date.now() / 1000);
       const head = part({ alg: 'RS256', kid: `key-${kid}`, ...tamper.header });
       const body = part({ iss: ISSUER, aud: 'versimo', sub, nonce, iat: now, exp: now + 600, ...tamper.claims });

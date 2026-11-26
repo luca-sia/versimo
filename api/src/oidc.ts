@@ -17,6 +17,9 @@ interface Jwk {
   kty?: string;
   n?: string;
   e?: string;
+  alg?: string;
+  use?: string;
+  key_ops?: string[];
 }
 
 export interface Oidc {
@@ -63,7 +66,15 @@ export function createOidc(issuer: string, doFetch: typeof fetch): Oidc {
 
   /** A key id that is not in the cached set fetches the set again, so a rotated key works at once. */
   async function signingKey(kid: unknown): Promise<Jwk> {
-    const find = (keys: Jwk[]) => keys.find((k) => k.kid === kid && k.kty === 'RSA');
+    const find = (keys: Jwk[]) =>
+      keys.find(
+        (k) =>
+          k.kid === kid &&
+          k.kty === 'RSA' &&
+          (k.alg ?? 'RS256') === 'RS256' &&
+          (k.use ?? 'sig') === 'sig' &&
+          (k.key_ops?.includes('verify') ?? true),
+      );
     const cached = published && published.until > Date.now() ? find(published.value) : undefined;
     if (cached) return cached;
     const body = await get((await endpoints()).jwks, 'jwks');
@@ -80,6 +91,8 @@ export function createOidc(issuer: string, doFetch: typeof fetch): Oidc {
     const [head, body, signature] = parts as [string, string, string];
     const header = decode(head);
     if (header.alg !== 'RS256') throw new Error('id-token-alg');
+    // No header extension is supported, so none may be marked critical.
+    if (header.crit !== undefined) throw new Error('id-token-crit');
     const { n, e } = await signingKey(header.kid);
     const algorithm = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
     const key = await crypto.subtle.importKey('jwk', { kty: 'RSA', n, e }, algorithm, false, ['verify']);
@@ -93,6 +106,9 @@ export function createOidc(issuer: string, doFetch: typeof fetch): Oidc {
     if (claims.aud !== expected.clientId) throw new Error('id-token-audience');
     if (typeof claims.exp !== 'number' || claims.exp < now - SKEW) throw new Error('id-token-expired');
     if (typeof claims.iat !== 'number' || claims.iat > now + SKEW) throw new Error('id-token-future');
+    if (claims.nbf !== undefined && (typeof claims.nbf !== 'number' || claims.nbf > now + SKEW)) {
+      throw new Error('id-token-not-yet-valid');
+    }
     if (claims.nonce !== expected.nonce) throw new Error('id-token-nonce');
     if (typeof claims.sub !== 'string' || claims.sub === '') throw new Error('id-token-subject');
     return claims.sub;

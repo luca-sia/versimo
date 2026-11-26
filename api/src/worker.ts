@@ -40,15 +40,15 @@ interface Ctx {
 }
 
 const doFetch: typeof fetch = (input, init) => fetch(input, init);
-let oidc: Oidc | undefined;
+let kept: { issuer: string; oidc: Oidc } | undefined;
 
 export default {
   async fetch(request: Request, env: Env, ctx: Ctx): Promise<Response> {
     // Hyperdrive pools the connections, so one client per request is cheap.
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
-    oidc ??= createOidc(env.ISSUER, doFetch);
+    if (kept?.issuer !== env.ISSUER) kept = { issuer: env.ISSUER, oidc: createOidc(env.ISSUER, doFetch) };
     const app = createApp({
-      oidc,
+      oidc: kept.oidc,
       fetch: doFetch,
       store: new PgStore(sql),
       config: {

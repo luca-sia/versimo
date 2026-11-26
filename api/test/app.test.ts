@@ -33,7 +33,7 @@ async function signIn(app: ReturnType<typeof createApp>, back = '/app') {
   const target = new URL(start.headers.get('location')!);
   const state = target.searchParams.get('state')!;
   const signInCookie = cookiesOf(start).versimo_signin!;
-  const code = goodCode(target.searchParams.get('nonce')!);
+  const code = goodCode(target);
   const res = await app(
     new Request(`${ORIGIN}/app/callback?code=${code}&state=${state}`, {
       headers: { cookie: `versimo_signin=${signInCookie}` },
@@ -130,6 +130,11 @@ describe('sign in', () => {
     ['an ID token signed with another key', async () => ({ signWith: (await newKey()).privateKey })],
     ['another algorithm', () => ({ header: { alg: 'HS256' } })],
     ['an unknown key id', () => ({ header: { kid: 'nobody' } })],
+    ['an encryption key', () => ({ jwk: { use: 'enc' } })],
+    ['a key published for another algorithm', () => ({ jwk: { alg: 'RS512' } })],
+    ['a key that may not verify', () => ({ jwk: { key_ops: ['encrypt'] } })],
+    ['a critical header extension', () => ({ header: { crit: ['exp'] } })],
+    ['a token not valid yet', () => ({ claims: { nbf: Math.floor(Date.now() / 1000) + 86400 } })],
     ['no ID token', () => ({ idToken: null })],
     ['another issuer', () => ({ claims: { iss: 'https://evil.example' } })],
     ['another audience', () => ({ claims: { aud: 'someone-else' } })],
@@ -156,6 +161,20 @@ describe('sign in', () => {
       assert.equal(cookiesOf(res).versimo_session, undefined);
     });
   }
+
+  it('refuses a code whose challenge does not match the verifier', async () => {
+    const app = createApp({ store: new MemoryStore(), config, fetch: fakeIdp().fetch });
+    const start = await app(new Request(`${ORIGIN}/api/auth/login`));
+    const target = new URL(start.headers.get('location')!);
+    target.searchParams.set('code_challenge', 'someone-elses-challenge');
+    const res = await app(
+      new Request(`${ORIGIN}/app/callback?code=${goodCode(target)}&state=${target.searchParams.get('state')}`, {
+        headers: { cookie: `versimo_signin=${cookiesOf(start).versimo_signin}` },
+      }),
+    );
+    assert.equal(res.headers.get('location'), '/app?signin=failed');
+    assert.equal(cookiesOf(res).versimo_session, undefined);
+  });
 
   it('keeps an email only when the issuer has verified it', async () => {
     const idp = fakeIdp('user-catalin', 'Catalin', { userinfo: { email_verified: false } });
