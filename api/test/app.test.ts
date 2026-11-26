@@ -143,6 +143,13 @@ describe('sign in', () => {
     ['an expired token', () => ({ claims: { exp: Math.floor(Date.now() / 1000) - 120 } })],
     ['a token from the future', () => ({ claims: { iat: Math.floor(Date.now() / 1000) + 120 } })],
     ['no subject', () => ({ claims: { sub: '' } })],
+    ...(['exp', 'iat', 'nbf'] as const).map((claim): [string, () => Tamper] => [
+      `an infinite ${claim}`,
+      () => ({
+        claims: { [claim]: 'huge' },
+        rewrite: (json) => json.replace('"huge"', claim === 'exp' ? '1e400' : '-1e400'),
+      }),
+    ]),
     ['userinfo for someone else', () => ({ userinfo: { sub: 'intruder' } })],
     ['discovery naming another issuer', () => ({ discovery: { issuer: 'https://evil.example' } })],
     ['a plain http endpoint', () => ({ discovery: { token_endpoint: 'http://accounts.example/token' } })],

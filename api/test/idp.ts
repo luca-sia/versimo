@@ -12,11 +12,14 @@ export const newKey = () =>
     ['sign', 'verify'],
   );
 
-const part = (value: object) => b64url(new TextEncoder().encode(JSON.stringify(value)));
+const encode = (json: string) => b64url(new TextEncoder().encode(json));
+const part = (value: object) => encode(JSON.stringify(value));
 
 export interface Tamper {
   claims?: Record<string, unknown>;
   header?: Record<string, unknown>;
+  /** Rewrites the claims JSON, for values `JSON.stringify` cannot write. */
+  rewrite?: (claims: string) => string;
   /** Changes the published key. */
   jwk?: Record<string, unknown>;
   /** Signs with this key instead of the published one. */
@@ -68,7 +71,8 @@ export function fakeIdp(sub = 'user-catalin', name = 'Catalin', tamper: Tamper =
       }
       const now = Math.floor(Date.now() / 1000);
       const head = part({ alg: 'RS256', kid: `key-${kid}`, ...tamper.header });
-      const body = part({ iss: ISSUER, aud: 'versimo', sub, nonce, iat: now, exp: now + 600, ...tamper.claims });
+      const claims = JSON.stringify({ iss: ISSUER, aud: 'versimo', sub, nonce, iat: now, exp: now + 600, ...tamper.claims });
+      const body = encode(tamper.rewrite?.(claims) ?? claims);
       const signature = await crypto.subtle.sign(
         RSA,
         tamper.signWith ?? (await keys()).privateKey,

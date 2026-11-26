@@ -22,6 +22,9 @@ interface Jwk {
   key_ops?: string[];
 }
 
+/** A JSON number can parse to infinity, which is not a time. */
+const isTime = (value: unknown): value is number => Number.isFinite(value);
+
 export interface Oidc {
   endpoints(): Promise<Endpoints>;
   /** The subject of an ID token that passes every check. Throws a short reason otherwise. */
@@ -104,9 +107,9 @@ export function createOidc(issuer: string, doFetch: typeof fetch): Oidc {
     const now = Math.floor(Date.now() / 1000);
     if (claims.iss !== issuer) throw new Error('id-token-issuer');
     if (claims.aud !== expected.clientId) throw new Error('id-token-audience');
-    if (typeof claims.exp !== 'number' || claims.exp < now - SKEW) throw new Error('id-token-expired');
-    if (typeof claims.iat !== 'number' || claims.iat > now + SKEW) throw new Error('id-token-future');
-    if (claims.nbf !== undefined && (typeof claims.nbf !== 'number' || claims.nbf > now + SKEW)) {
+    if (!isTime(claims.exp) || claims.exp < now - SKEW) throw new Error('id-token-expired');
+    if (!isTime(claims.iat) || claims.iat > now + SKEW) throw new Error('id-token-future');
+    if (claims.nbf !== undefined && (!isTime(claims.nbf) || claims.nbf > now + SKEW)) {
       throw new Error('id-token-not-yet-valid');
     }
     if (claims.nonce !== expected.nonce) throw new Error('id-token-nonce');
