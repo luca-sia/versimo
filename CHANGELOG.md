@@ -4,6 +4,7 @@ All notable changes are listed here. This project follows [semver](https://semve
 
 ## Unreleased
 
+- The app API signs in through Lucasia ID: endpoints and keys from discovery, a nonce, the ID token checked before a session starts, and the client secret sent as `client_secret_basic`
 - PostHog flags drive next. `postHogRollout` reads the share on next for each module from the PostHog flag `versimo-<module>`, so a rollout change needs no deploy. Bucketing stays with Versimo, so users land on the same version in every language. No user data is sent to PostHog.
 - `createClient` takes a `rollout` option that overrides the record's share
 - Python (`PostHogRollout`) and Go (`NewPostHogRollout`) get the same

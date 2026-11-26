@@ -3,45 +3,19 @@ import { describe, it } from 'node:test';
 
 import { createApp, type Config } from '../src/app.js';
 import { MemoryStore } from '../src/memory-store.js';
+import { createOidc } from '../src/oidc.js';
 import { sign } from '../src/session.js';
+import { fakeIdp, goodCode, ISSUER, newKey, type Tamper } from './idp.js';
 
 const config: Config = {
-  issuer: 'https://accounts.example',
-  authorizeUrl: 'https://accounts.example/api/auth/oauth2/authorize',
-  tokenUrl: 'https://accounts.example/api/auth/oauth2/token',
-  userinfoUrl: 'https://accounts.example/api/auth/oauth2/userinfo',
+  issuer: ISSUER,
   clientId: 'versimo',
-  clientSecret: 'client-secret',
+  clientSecret: 'client secret:+/',
   sessionSecret: 'a-session-secret-that-is-long-enough-1234',
   appOrigin: 'https://versimo.test',
 };
 
 const ORIGIN = config.appOrigin;
-
-interface FakeIdp {
-  fetch: typeof fetch;
-  calls: { url: string; body?: string; auth?: string | null }[];
-}
-
-function fakeIdp(sub = 'user-catalin', name = 'Catalin'): FakeIdp {
-  const calls: FakeIdp['calls'] = [];
-  const f = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input);
-    const headers = new Headers(init?.headers);
-    calls.push({ url, body: init?.body ? String(init.body) : undefined, auth: headers.get('authorization') });
-    if (url === config.tokenUrl) {
-      const params = new URLSearchParams(String(init?.body));
-      if (params.get('code') !== 'good-code') return new Response('{"error":"invalid_grant"}', { status: 400 });
-      return Response.json({ access_token: `token-for-${sub}`, token_type: 'Bearer' });
-    }
-    if (url === config.userinfoUrl) {
-      if (headers.get('authorization') !== `Bearer token-for-${sub}`) return new Response('', { status: 401 });
-      return Response.json({ sub, name, email: `${sub}@example.com` });
-    }
-    return new Response('', { status: 404 });
-  }) as typeof fetch;
-  return { fetch: f, calls };
-}
 
 function cookiesOf(res: Response): Record<string, string> {
   const out: Record<string, string> = {};
@@ -59,8 +33,9 @@ async function signIn(app: ReturnType<typeof createApp>, back = '/app') {
   const target = new URL(start.headers.get('location')!);
   const state = target.searchParams.get('state')!;
   const signInCookie = cookiesOf(start).versimo_signin!;
+  const code = goodCode(target.searchParams.get('nonce')!);
   const res = await app(
-    new Request(`${ORIGIN}/app/callback?code=good-code&state=${state}`, {
+    new Request(`${ORIGIN}/app/callback?code=${code}&state=${state}`, {
       headers: { cookie: `versimo_signin=${signInCookie}` },
     }),
   );
@@ -83,7 +58,8 @@ describe('sign in', () => {
     const res = await app(new Request(`${ORIGIN}/api/auth/login`));
     assert.equal(res.status, 302);
     const target = new URL(res.headers.get('location')!);
-    assert.equal(target.origin + target.pathname, config.authorizeUrl);
+    assert.equal(target.origin + target.pathname, `${ISSUER}/oauth2/authorize`);
+    assert.ok(target.searchParams.get('nonce'));
     assert.equal(target.searchParams.get('client_id'), 'versimo');
     assert.equal(target.searchParams.get('redirect_uri'), `${ORIGIN}/app/callback`);
     assert.equal(target.searchParams.get('code_challenge_method'), 'S256');
@@ -103,11 +79,14 @@ describe('sign in', () => {
     const { res, session } = await signIn(app, '/app?project=1');
     assert.equal(res.status, 302);
     assert.equal(res.headers.get('location'), '/app?project=1');
-    const token = new URLSearchParams(idp.calls[0]!.body);
+    const exchange = idp.calls.find((c) => c.url === `${ISSUER}/oauth2/token`)!;
+    const token = new URLSearchParams(exchange.body);
     assert.equal(token.get('grant_type'), 'authorization_code');
-    assert.equal(token.get('client_secret'), 'client-secret');
+    assert.equal(token.get('client_secret'), null);
+    assert.equal(token.get('redirect_uri'), `${ORIGIN}/app/callback`);
+    assert.equal(exchange.auth, `Basic ${btoa('versimo:client%20secret%3A%2B%2F')}`);
     assert.ok((token.get('code_verifier') ?? '').length >= 43);
-    assert.equal(idp.calls[1]!.auth, 'Bearer token-for-user-catalin');
+    assert.equal(idp.calls.at(-1)!.auth, 'Bearer token-for-user-catalin');
 
     const me = await app(new Request(`${ORIGIN}/api/me`, { headers: { cookie: session } }));
     assert.equal(me.status, 200);
@@ -145,6 +124,60 @@ describe('sign in', () => {
     );
     assert.equal(res.headers.get('location'), '/app?signin=failed');
     assert.equal(cookiesOf(res).versimo_session, undefined);
+  });
+
+  const refusals: [string, () => Promise<Tamper> | Tamper][] = [
+    ['an ID token signed with another key', async () => ({ signWith: (await newKey()).privateKey })],
+    ['another algorithm', () => ({ header: { alg: 'HS256' } })],
+    ['an unknown key id', () => ({ header: { kid: 'nobody' } })],
+    ['no ID token', () => ({ idToken: null })],
+    ['another issuer', () => ({ claims: { iss: 'https://evil.example' } })],
+    ['another audience', () => ({ claims: { aud: 'someone-else' } })],
+    ['an audience list', () => ({ claims: { aud: ['versimo', 'someone-else'] } })],
+    ['another nonce', () => ({ claims: { nonce: 'replayed' } })],
+    ['an expired token', () => ({ claims: { exp: Math.floor(Date.now() / 1000) - 120 } })],
+    ['a token from the future', () => ({ claims: { iat: Math.floor(Date.now() / 1000) + 120 } })],
+    ['no subject', () => ({ claims: { sub: '' } })],
+    ['userinfo for someone else', () => ({ userinfo: { sub: 'intruder' } })],
+    ['discovery naming another issuer', () => ({ discovery: { issuer: 'https://evil.example' } })],
+    ['a plain http endpoint', () => ({ discovery: { token_endpoint: 'http://accounts.example/token' } })],
+  ];
+  for (const [what, tamper] of refusals) {
+    it(`refuses ${what}`, async () => {
+      const store = new MemoryStore();
+      const app = createApp({ store, config, fetch: fakeIdp('user-catalin', 'Catalin', await tamper()).fetch });
+      const start = await app(new Request(`${ORIGIN}/api/auth/login`));
+      if (start.headers.get('location')!.startsWith('/')) {
+        assert.equal(start.headers.get('location'), '/app?signin=failed');
+        return;
+      }
+      const { res } = await signIn(app);
+      assert.equal(res.headers.get('location'), '/app?signin=failed');
+      assert.equal(cookiesOf(res).versimo_session, undefined);
+    });
+  }
+
+  it('keeps an email only when the issuer has verified it', async () => {
+    const idp = fakeIdp('user-catalin', 'Catalin', { userinfo: { email_verified: false } });
+    const app = createApp({ store: new MemoryStore(), config, fetch: idp.fetch });
+    const { session } = await signIn(app);
+    const me = await app(new Request(`${ORIGIN}/api/me`, { headers: { cookie: session } }));
+    assert.equal(((await me.json()) as { user: { email: string | null } }).user.email, null);
+  });
+
+  it('reuses discovery and keys, and fetches the keys again when they rotate', async () => {
+    const idp = fakeIdp();
+    const oidc = createOidc(ISSUER, idp.fetch);
+    const app = createApp({ store: new MemoryStore(), config, fetch: idp.fetch, oidc });
+    const count = (end: string) => idp.calls.filter((c) => c.url.endsWith(end)).length;
+    await signIn(app);
+    await signIn(app);
+    assert.equal(count('openid-configuration'), 1);
+    assert.equal(count('/jwks'), 1);
+    await idp.rotate();
+    const { res } = await signIn(app);
+    assert.equal(res.headers.get('location'), '/app');
+    assert.equal(count('/jwks'), 2);
   });
 
   it('only returns to paths inside the app', async () => {

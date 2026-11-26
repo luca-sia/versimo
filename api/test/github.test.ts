@@ -10,10 +10,7 @@ const ORIGIN = 'https://versimo.test';
 const privateKey = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs1', format: 'pem' }).toString();
 
 const base: Config = {
-  issuer: 'https://accounts.example',
-  authorizeUrl: 'https://accounts.example/authorize',
-  tokenUrl: 'https://accounts.example/token',
-  userinfoUrl: 'https://accounts.example/userinfo',
+  issuer: 'https://accounts.example/api/auth',
   clientId: 'versimo',
   clientSecret: 'client-secret',
   sessionSecret: 'a-session-secret-that-is-long-enough-1234',
