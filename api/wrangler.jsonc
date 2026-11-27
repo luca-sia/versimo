@@ -24,8 +24,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Set after `wrangler hyperdrive create versimo-db`. See README.md.
-      "id": "REPLACE_WITH_HYPERDRIVE_ID"
+      // versimo-db: pg-one.lucasia.ai, database versimo, user versimo_app.
+      "id": "5fc4a1d2d6d54e879b7d8db0c4900f76"
     }
   ]
 }
