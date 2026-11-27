@@ -124,22 +124,27 @@ function contract(name: string, make: () => Promise<Store>) {
       assert.equal(await store.getPosthog(a.id, p.id), null);
     });
 
-    it('keeps one read key hash per project, for its owner only', async () => {
+    it('keeps one read and one deploy key hash per project, for its owner only', async () => {
       const store = await make();
       const a = await store.upsertUser(identity('rk-a'));
       const b = await store.upsertUser(identity('rk-b'));
       const p = await store.createProject(a.id, 'Shop');
-      const hash = 'a'.repeat(64);
-      assert.equal(await store.hasReadKey(a.id, p.id), false);
-      assert.equal(await store.hasReadKey(b.id, p.id), null);
-      assert.equal(await store.setReadKey(b.id, p.id, hash), false);
-      assert.equal(await store.projectForReadKey(hash), null);
-      assert.equal(await store.setReadKey(a.id, p.id, hash), true);
-      assert.equal(await store.hasReadKey(a.id, p.id), true);
-      assert.equal(await store.projectForReadKey(hash), p.id);
+      const read = 'a'.repeat(64);
+      const deploy = 'b'.repeat(64);
+      assert.equal(await store.hasKey(a.id, p.id, 'read'), false);
+      assert.equal(await store.hasKey(b.id, p.id, 'read'), null);
+      assert.equal(await store.setKey(b.id, p.id, 'read', read), false);
+      assert.equal(await store.projectForKey('read', read), null);
+      assert.equal(await store.setKey(a.id, p.id, 'read', read), true);
+      assert.equal(await store.setKey(a.id, p.id, 'deploy', deploy), true);
+      assert.equal(await store.hasKey(a.id, p.id, 'read'), true);
+      assert.deepEqual(await store.projectForKey('read', read), { projectId: p.id, ownerId: a.id });
+      assert.deepEqual(await store.projectForKey('deploy', deploy), { projectId: p.id, ownerId: a.id });
+      assert.equal(await store.projectForKey('deploy', read), null);
       assert.deepEqual(await store.getProject(a.id, p.id).then((x) => Object.keys(x!).sort()), ['createdAt', 'id', 'name', 'updatedAt']);
-      assert.equal(await store.setReadKey(a.id, p.id, null), true);
-      assert.equal(await store.projectForReadKey(hash), null);
+      assert.equal(await store.setKey(a.id, p.id, 'read', null), true);
+      assert.equal(await store.projectForKey('read', read), null);
+      assert.equal(await store.hasKey(a.id, p.id, 'deploy'), true);
     });
 
     it('clears every project of a removed installation', async () => {
@@ -183,7 +188,7 @@ if (url) {
   // The migration has its own begin and commit, so it runs on a single connection.
   const migrate = async () => {
     const one = postgres(url, { max: 1, onnotice: () => {} });
-    for (const file of ['0001_init.sql', '0002_posthog.sql', '0003_read_key.sql']) {
+    for (const file of ['0001_init.sql', '0002_posthog.sql', '0003_read_key.sql', '0004_deploy_key.sql']) {
       await one.unsafe(await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8')).simple();
     }
     await one.end();

@@ -468,3 +468,72 @@ describe('records for apps', () => {
     assert.deepEqual(await (await call(a, sa, 'GET', `/api/projects/${project.id}/read-key`)).json(), { readKey: false });
   });
 });
+
+describe('deploy key for CI', () => {
+  it('drafts, rolls out, promotes and rolls back with a bearer deploy key, logged as the deploy key', async () => {
+    const app = createApp({ store: new MemoryStore(), config, fetch: fakeIdp().fetch });
+    const { session } = await signIn(app);
+    const { project } = (await (await call(app, session, 'POST', '/api/projects', { name: 'Lucasia' })).json()) as {
+      project: { id: string };
+    };
+    const made = await call(app, session, 'POST', `/api/projects/${project.id}/deploy-key`);
+    assert.equal(made.status, 201);
+    const { deployKey } = (await made.json()) as { deployKey: string };
+    assert.match(deployKey, /^vdk_/);
+
+    const ci = (method: string, path: string, body?: unknown, key = deployKey) =>
+      app(
+        new Request(ORIGIN + path, {
+          method,
+          headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        }),
+      );
+    assert.equal((await ci('POST', '/api/deploy/modules', { module: 'app', current: '1.0.0' })).status, 201);
+    assert.equal((await ci('POST', '/api/deploy/modules/app/draft', { version: '1.0.1' })).status, 200);
+    assert.equal((await ci('POST', '/api/deploy/modules/app/rollout', { rollout: 10 })).status, 200);
+    const promoted = (await (await ci('POST', '/api/deploy/modules/app/promote', {})).json()) as {
+      module: { last: string; current: string; next: null };
+    };
+    assert.deepEqual([promoted.module.last, promoted.module.current, promoted.module.next], ['1.0.0', '1.0.1', null]);
+    assert.equal((await ci('POST', '/api/deploy/modules/app/rollback', {})).status, 200);
+    const list = (await (await ci('GET', '/api/deploy/modules')).json()) as { modules: { current: string }[] };
+    assert.equal(list.modules[0]!.current, '1.0.0');
+
+    const history = (await (await call(app, session, 'GET', `/api/projects/${project.id}/history`)).json()) as {
+      history: { by: string }[];
+    };
+    assert.ok(history.history.every((h) => h.by === 'Deploy key'));
+  });
+
+  it('does not treat inherited object names as key routes', async () => {
+    const app = createApp({ store: new MemoryStore(), config, fetch: fakeIdp().fetch });
+    const { session } = await signIn(app);
+    const { project } = (await (await call(app, session, 'POST', '/api/projects', { name: 'Lucasia' })).json()) as {
+      project: { id: string };
+    };
+    for (const name of ['constructor', 'toString', '__proto__']) {
+      assert.equal((await call(app, session, 'POST', `/api/projects/${project.id}/${name}`)).status, 404);
+    }
+  });
+
+  it('refuses a missing, wrong, read or removed key', async () => {
+    const app = createApp({ store: new MemoryStore(), config, fetch: fakeIdp().fetch });
+    const { session } = await signIn(app);
+    const { project } = (await (await call(app, session, 'POST', '/api/projects', { name: 'Lucasia' })).json()) as {
+      project: { id: string };
+    };
+    const { readKey } = (await (await call(app, session, 'POST', `/api/projects/${project.id}/read-key`)).json()) as { readKey: string };
+    const { deployKey } = (await (await call(app, session, 'POST', `/api/projects/${project.id}/deploy-key`)).json()) as {
+      deployKey: string;
+    };
+    const status = async (auth?: string) =>
+      (await app(new Request(`${ORIGIN}/api/deploy/modules`, { headers: auth ? { authorization: auth } : {} }))).status;
+    assert.equal(await status(), 401);
+    assert.equal(await status('Bearer vdk_wrong'), 401);
+    assert.equal(await status(`Bearer ${readKey}`), 401);
+    assert.equal(await status(`Bearer ${deployKey}`), 200);
+    await call(app, session, 'DELETE', `/api/projects/${project.id}/deploy-key`);
+    assert.equal(await status(`Bearer ${deployKey}`), 401);
+  });
+});

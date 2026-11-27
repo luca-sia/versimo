@@ -1,6 +1,19 @@
 import type postgres from 'postgres';
 
-import type { AuditEntry, GithubLink, Identity, PosthogStored, Project, Store, StoredModule, User } from './store.js';
+import type {
+  AuditEntry,
+  GithubLink,
+  Identity,
+  KeyKind,
+  KeyOwner,
+  PosthogStored,
+  Project,
+  Store,
+  StoredModule,
+  User,
+} from './store.js';
+
+const KEY_COLUMN: Record<KeyKind, string> = { read: 'read_key_hash', deploy: 'deploy_key_hash' };
 
 type Sql = postgres.Sql;
 
@@ -131,22 +144,24 @@ export class PgStore implements Store {
     return rows.length;
   }
 
-  async hasReadKey(ownerId: string, projectId: string): Promise<boolean | null> {
+  async hasKey(ownerId: string, projectId: string, kind: KeyKind): Promise<boolean | null> {
     const [row] = await this.sql`
-      select read_key_hash is not null as has_key from projects where id = ${projectId} and owner_id = ${ownerId}`;
+      select ${this.sql(KEY_COLUMN[kind])} is not null as has_key from projects
+      where id = ${projectId} and owner_id = ${ownerId}`;
     return row ? Boolean(row.has_key) : null;
   }
 
-  async setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean> {
+  async setKey(ownerId: string, projectId: string, kind: KeyKind, hash: string | null): Promise<boolean> {
     const rows = await this.sql`
-      update projects set read_key_hash = ${hash}, updated_at = now()
+      update projects set ${this.sql(KEY_COLUMN[kind])} = ${hash}, updated_at = now()
       where id = ${projectId} and owner_id = ${ownerId} returning id`;
     return rows.length === 1;
   }
 
-  async projectForReadKey(hash: string): Promise<string | null> {
-    const [row] = await this.sql`select id from projects where read_key_hash = ${hash}`;
-    return row ? String(row.id) : null;
+  async projectForKey(kind: KeyKind, hash: string): Promise<KeyOwner | null> {
+    const [row] = await this.sql`
+      select id, owner_id from projects where ${this.sql(KEY_COLUMN[kind])} = ${hash}`;
+    return row ? { projectId: String(row.id), ownerId: String(row.owner_id) } : null;
   }
 
   async listModules(projectId: string): Promise<StoredModule[]> {
@@ -174,7 +189,7 @@ export class PgStore implements Store {
     projectId: string,
     module: string,
     change: (record: StoredModule) => { record: StoredModule; entries: AuditEntry[] },
-    byUser: string,
+    byUser: string | null,
   ): Promise<StoredModule | null> {
     return this.sql.begin(async (tx) => {
       const [row] = await tx`

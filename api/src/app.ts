@@ -13,7 +13,7 @@ import { createOidc, type Oidc } from './oidc.js';
 import { isRegion, keyHint, posthog, type PosthogLink, type SyncResult } from './posthog.js';
 import { seal, unseal } from './seal.js';
 import { cookie, pkceChallenge, randomToken, readCookie, sign, verify } from './session.js';
-import type { AuditEntry, Store, StoredModule } from './store.js';
+import type { AuditEntry, KeyKind, Store, StoredModule } from './store.js';
 
 export interface Config {
   /** The OIDC issuer, https://lucasia.ai/api/auth. Its endpoints come from discovery. */
@@ -40,6 +40,8 @@ interface Session {
   uid: string;
   name: string | null;
   email: string | null;
+  /** Set when CI acts with the deploy key. The history then names no user. */
+  deployKey?: true;
 }
 
 interface SignIn {
@@ -109,7 +111,10 @@ function projectName(value: unknown): string {
   return name;
 }
 
-const READ_KEY = /^vrk_[A-Za-z0-9_-]{32,64}$/;
+const KEY_PREFIX: Record<KeyKind, string> = { read: 'vrk_', deploy: 'vdk_' };
+const KEY_ROUTE: Record<string, KeyKind> = { 'read-key': 'read', 'deploy-key': 'deploy' };
+const isKey = (kind: KeyKind, value: string | undefined): value is string =>
+  !!value && value.startsWith(KEY_PREFIX[kind]) && /^[A-Za-z0-9_-]{32,64}$/.test(value.slice(4));
 const RECORD_FILE = /^([a-z0-9]+(?:-[a-z0-9]+)*)\.json$/;
 
 async function sha256(value: string): Promise<string> {
@@ -280,7 +285,7 @@ export function createApp(deps: Deps) {
       to: record.current,
       by: s.name ?? s.email,
     };
-    const ok = await store.createModule(projectId, fromRecord(record), entry, s.uid);
+    const ok = await store.createModule(projectId, fromRecord(record), entry, s.deployKey ? null : s.uid);
     if (!ok) throw new HttpError(409, `A module called ${record.module} already exists`);
     const synced = await syncShares(s.uid, projectId, [fromRecord(record)]);
     return json({ module: fromRecord(record), posthog: synced }, 201);
@@ -318,7 +323,7 @@ export function createApp(deps: Deps) {
         }));
         return { record: fromRecord(next), entries };
       },
-      s.uid,
+      s.deployKey ? null : s.uid,
     );
     if (!updated) throw new HttpError(404, 'No such module');
     return json({ module: updated, posthog: await syncShares(s.uid, projectId, [updated]) });
@@ -350,29 +355,49 @@ export function createApp(deps: Deps) {
     }
   }
 
-  async function readKeyProject(s: Session, projectId: string, method: string): Promise<Response> {
-    if (method === 'GET') return json({ readKey: Boolean(await store.hasReadKey(s.uid, projectId)) });
+  async function keyProject(s: Session, projectId: string, kind: KeyKind, method: string): Promise<Response> {
+    const field = kind === 'read' ? 'readKey' : 'deployKey';
+    if (method === 'GET') return json({ [field]: Boolean(await store.hasKey(s.uid, projectId, kind)) });
     if (method === 'POST') {
-      // A new key replaces the old one at once. Only its hash is kept, so it is shown this one time.
-      const key = `vrk_${randomToken(32)}`;
-      await store.setReadKey(s.uid, projectId, await sha256(key));
-      return json({ readKey: key }, 201);
+      // A new key replaces the old one. Only its hash is kept, so it is shown this one time.
+      const key = `${KEY_PREFIX[kind]}${randomToken(32)}`;
+      await store.setKey(s.uid, projectId, kind, await sha256(key));
+      return json({ [field]: key }, 201);
     }
     if (method === 'DELETE') {
-      await store.setReadKey(s.uid, projectId, null);
+      await store.setKey(s.uid, projectId, kind, null);
       return new Response(null, { status: 204 });
     }
     throw new HttpError(405, 'Method not allowed');
+  }
+
+  /**
+   * CI changes modules with the project's deploy key, sent as a bearer token.
+   * Changes go through the same rules and history as the app, by "Deploy key".
+   */
+  async function deploy(request: Request, parts: string[]): Promise<Response> {
+    const key = /^Bearer (\S+)$/.exec(request.headers.get('authorization') ?? '')?.[1];
+    const owner = isKey('deploy', key) ? await store.projectForKey('deploy', await sha256(key)) : null;
+    if (!owner) throw new HttpError(401, 'Send a valid deploy key');
+    const actor: Session = { uid: owner.ownerId, name: 'Deploy key', email: null, deployKey: true };
+    const [, , collection, moduleName, action, extra] = parts;
+    if (collection !== 'modules' || extra) throw new HttpError(404, 'Not found');
+    if (!moduleName && request.method === 'GET') return json({ modules: await store.listModules(owner.projectId) });
+    if (!moduleName && request.method === 'POST') return createModule(actor, owner.projectId, request);
+    if (moduleName && action && request.method === 'POST') {
+      return changeModule(actor, owner.projectId, moduleName, action, request);
+    }
+    throw new HttpError(404, 'Not found');
   }
 
   /** One module's record for an app holding the project's read key. Every miss is the same 404. */
   async function publicRecord(key: string | undefined, file: string | undefined): Promise<Response> {
     const missing = () => json({ error: 'Not found' }, 404, { 'access-control-allow-origin': '*' });
     const slug = file?.match(RECORD_FILE)?.[1];
-    if (!key || !READ_KEY.test(key) || !slug) return missing();
-    const projectId = await store.projectForReadKey(await sha256(key));
-    if (!projectId) return missing();
-    const found = (await store.listModules(projectId)).find((m) => m.module === slug);
+    if (!isKey('read', key) || !slug) return missing();
+    const owner = await store.projectForKey('read', await sha256(key));
+    if (!owner) return missing();
+    const found = (await store.listModules(owner.projectId)).find((m) => m.module === slug);
     if (!found) return missing();
     return json(toRecord(found), 200, {
       'cache-control': 'public, max-age=15',
@@ -551,6 +576,8 @@ export function createApp(deps: Deps) {
       }
     }
 
+    if (parts[0] === 'api' && parts[1] === 'deploy') return deploy(request, parts);
+
     if (parts[0] !== 'api' || parts[1] !== 'projects') throw new HttpError(404, 'Not found');
     const s = await requireSession(request);
     const [, , id, sub, moduleName, action, extra] = parts;
@@ -579,7 +606,8 @@ export function createApp(deps: Deps) {
     }
     if (sub === 'github' && !moduleName) return githubProject(s, p.id, request);
     if (sub === 'posthog' && !moduleName) return posthogProject(s, p.id, request);
-    if (sub === 'read-key' && !moduleName) return readKeyProject(s, p.id, method);
+    const kind = Object.hasOwn(KEY_ROUTE, sub) ? KEY_ROUTE[sub] : undefined;
+    if (kind && !moduleName) return keyProject(s, p.id, kind, method);
     if (sub === 'github' && moduleName === 'install' && !action && method === 'GET') return githubInstall(s, p.id);
     if (sub === 'history' && !moduleName && method === 'GET') {
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 500);

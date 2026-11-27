@@ -1,10 +1,21 @@
-import type { AuditEntry, GithubLink, Identity, PosthogStored, Project, Store, StoredModule, User } from './store.js';
+import type {
+  AuditEntry,
+  GithubLink,
+  Identity,
+  KeyKind,
+  KeyOwner,
+  PosthogStored,
+  Project,
+  Store,
+  StoredModule,
+  User,
+} from './store.js';
 
 interface ProjectRow extends Project {
   ownerId: string;
   github?: GithubLink | null;
   posthog?: PosthogStored | null;
-  readKey?: string | null;
+  keys?: Partial<Record<KeyKind, string | null>>;
 }
 
 /** An in-memory Store for tests and local runs. Same rules as the Postgres one. */
@@ -106,21 +117,23 @@ export class MemoryStore implements Store {
     return n;
   }
 
-  async hasReadKey(ownerId: string, projectId: string): Promise<boolean | null> {
+  async hasKey(ownerId: string, projectId: string, kind: KeyKind): Promise<boolean | null> {
     const row = this.projects.get(projectId);
-    return row && row.ownerId === ownerId ? Boolean(row.readKey) : null;
+    return row && row.ownerId === ownerId ? Boolean(row.keys?.[kind]) : null;
   }
 
-  async setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean> {
+  async setKey(ownerId: string, projectId: string, kind: KeyKind, hash: string | null): Promise<boolean> {
     const row = this.projects.get(projectId);
     if (!row || row.ownerId !== ownerId) return false;
-    row.readKey = hash;
+    row.keys = { ...row.keys, [kind]: hash };
     row.updatedAt = new Date().toISOString();
     return true;
   }
 
-  async projectForReadKey(hash: string): Promise<string | null> {
-    for (const row of this.projects.values()) if (row.readKey === hash) return row.id;
+  async projectForKey(kind: KeyKind, hash: string): Promise<KeyOwner | null> {
+    for (const row of this.projects.values()) {
+      if (row.keys?.[kind] === hash) return { projectId: row.id, ownerId: row.ownerId };
+    }
     return null;
   }
 
@@ -160,6 +173,6 @@ export class MemoryStore implements Store {
   }
 }
 
-function strip({ ownerId: _, github: __, posthog: ___, readKey: ____, ...project }: ProjectRow): Project {
+function strip({ ownerId: _, github: __, posthog: ___, keys: ____, ...project }: ProjectRow): Project {
   return { ...project };
 }

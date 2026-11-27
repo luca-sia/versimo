@@ -41,9 +41,13 @@ It signs people in through Lucasia ID, the issuer at `https://lucasia.ai/api/aut
 | `POST /api/projects/:id/read-key` | A new read key, `{ readKey: "vrk_..." }`. Shown once. The old key stops working, apart from answers cached for up to 15 seconds |
 | `DELETE /api/projects/:id/read-key` | Remove the read key. Apps can no longer fetch records |
 | `GET /api/records/:readKey/:module.json` | The module's record for an app. No session, CORS open, cached for 15 seconds. Any miss is a 404 |
+| `GET`, `POST`, `DELETE /api/projects/:id/deploy-key` | The same for the deploy key, `{ deployKey: "vdk_..." }` |
+| `GET /api/deploy/modules` | CI, with `Authorization: Bearer vdk_...`: the project's modules |
+| `POST /api/deploy/modules` `{ module, current, last? }` | CI: new module |
+| `POST /api/deploy/modules/:module/:action` | CI: `draft`, `rollout`, `promote` or `rollback`, with the same body as the app routes. Logged as "Deploy key" |
 | `POST /api/github/webhook` | GitHub events, checked by signature. A new stable `module/vX.Y.Z` tag adds that module to every project connected to the repo. Uninstalling the app disconnects its projects |
 
-Every write needs the session cookie and `Origin: https://versimo.dev`, except the webhook, which GitHub signs. The records route needs only the read key. A project that belongs to someone else answers 404.
+Every write needs the session cookie and `Origin: https://versimo.dev`, except the webhook, which GitHub signs. The records route needs only the read key and the deploy routes only the deploy key. A project that belongs to someone else answers 404.
 
 ## GitHub app
 
@@ -64,6 +68,10 @@ const version = await versimo.version('billing', { userId });
 
 The key only reads records, which hold version numbers and the rollout share. Treat it like a publishable key: fine in a browser bundle, rotated with `POST /read-key`. Only its SHA-256 is stored.
 
+## Deploy key for CI
+
+A release script that already runs last, current and next on its own (the Lucasia app's `worker-release.js`, for example) keeps Versimo as the record by calling the deploy routes after each step. The deploy key changes modules, so it lives in the repo's CI secrets and in 1Password, never in a bundle. Only its SHA-256 is stored, and a read key never works as a deploy key.
+
 ## PostHog flags
 
 A project can drive flags in its owner's own PostHog. Once connected, every module change (new module, draft, rollout, promote, rollback) writes the module's share to the flag `versimo-<module>`: released to 100%, payload `{"rollout": n}`. Apps that read flags with `postHogRollout` from the `versimo` package then follow the slider within their cache TTL, with no deploy. See [PostHog flags drive next](../docs/usage.md#posthog-flags-drive-next).
@@ -75,7 +83,7 @@ A project can drive flags in its owner's own PostHog. Once connected, every modu
 
 ## Data
 
-`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app. `migrations/0002_posthog.sql` adds `posthog_region`, `posthog_project_id` and the sealed `posthog_key`. `migrations/0003_read_key.sql` adds `read_key_hash`.
+`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app. `migrations/0002_posthog.sql` adds `posthog_region`, `posthog_project_id` and the sealed `posthog_key`. `migrations/0003_read_key.sql` adds `read_key_hash` and `migrations/0004_deploy_key.sql` adds `deploy_key_hash`.
 
 ## Tests
 
@@ -95,6 +103,7 @@ These steps change credentials or spend, so they wait for Catalin.
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0001_init.sql
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0002_posthog.sql
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0003_read_key.sql
+       psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0004_deploy_key.sql
 
    Put the connection string in the same 1Password item.
 3. **Connect the Worker to it.** `npx wrangler hyperdrive create versimo-db --connection-string="postgres://..."`, then put the id it prints in `wrangler.jsonc`.
