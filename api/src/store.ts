@@ -45,6 +45,14 @@ export interface PosthogStored {
   sealedKey: string;
 }
 
+/** A read key fetches records. A deploy key also changes modules, for CI. */
+export type KeyKind = 'read' | 'deploy';
+
+export interface KeyOwner {
+  projectId: string;
+  ownerId: string;
+}
+
 /** A module as stored. The same shape as a Versimo record, without the history. */
 export type StoredModule = Omit<ModuleRecord, 'history' | '$schema'>;
 
@@ -72,12 +80,12 @@ export interface Store {
   getPosthog(ownerId: string, projectId: string): Promise<PosthogStored | null>;
   /** Connects or, with null, disconnects PostHog. False when the project is not the owner's. */
   setPosthog(ownerId: string, projectId: string, link: PosthogStored | null): Promise<boolean>;
-  /** Whether the project has a read key. Null when the project does not exist or belongs to someone else. */
-  hasReadKey(ownerId: string, projectId: string): Promise<boolean | null>;
-  /** Stores the hash of a new read key or, with null, removes it. False when the project is not the owner's. */
-  setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean>;
-  /** The id of the project whose read key has this hash, or null. */
-  projectForReadKey(hash: string): Promise<string | null>;
+  /** Whether the project has a key of this kind. Null when the project does not exist or belongs to someone else. */
+  hasKey(ownerId: string, projectId: string, kind: KeyKind): Promise<boolean | null>;
+  /** Stores the hash of a new key or, with null, removes it. False when the project is not the owner's. */
+  setKey(ownerId: string, projectId: string, kind: KeyKind, hash: string | null): Promise<boolean>;
+  /** The project whose key of this kind has this hash, or null. */
+  projectForKey(kind: KeyKind, hash: string): Promise<KeyOwner | null>;
   listModules(projectId: string): Promise<StoredModule[]>;
   /**
    * Adds a module and its create entry. False when the slug is taken.
@@ -92,7 +100,7 @@ export interface Store {
     projectId: string,
     module: string,
     change: (record: StoredModule) => { record: StoredModule; entries: AuditEntry[] },
-    byUser: string,
+    byUser: string | null,
   ): Promise<StoredModule | null>;
   listHistory(projectId: string, limit: number): Promise<AuditEntry[]>;
 }
