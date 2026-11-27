@@ -10,6 +10,8 @@ import {
 import { parseModuleTag, recordFromTags, verifyWebhookSignature } from '../../src/github/index.js';
 import { githubApp, type GithubConfig } from './github.js';
 import { createOidc, type Oidc } from './oidc.js';
+import { isRegion, keyHint, posthog, type PosthogLink, type SyncResult } from './posthog.js';
+import { seal, unseal } from './seal.js';
 import { cookie, pkceChallenge, randomToken, readCookie, sign, verify } from './session.js';
 import type { AuditEntry, Store, StoredModule } from './store.js';
 
@@ -55,6 +57,7 @@ const CALLBACK = '/app/callback';
 const GITHUB_CALLBACK = '/app/github/callback';
 const GITHUB_STATE_TTL = 15 * 60;
 const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const POSTHOG_PURPOSE = 'posthog-key';
 
 interface GithubState {
   uid: string;
@@ -271,7 +274,8 @@ export function createApp(deps: Deps) {
     };
     const ok = await store.createModule(projectId, fromRecord(record), entry, s.uid);
     if (!ok) throw new HttpError(409, `A module called ${record.module} already exists`);
-    return json({ module: fromRecord(record) }, 201);
+    const synced = await syncShares(s.uid, projectId, [fromRecord(record)]);
+    return json({ module: fromRecord(record), posthog: synced }, 201);
   }
 
   async function changeModule(s: Session, projectId: string, module: string, action: string, request: Request) {
@@ -309,7 +313,75 @@ export function createApp(deps: Deps) {
       s.uid,
     );
     if (!updated) throw new HttpError(404, 'No such module');
-    return json({ module: updated });
+    return json({ module: updated, posthog: await syncShares(s.uid, projectId, [updated]) });
+  }
+
+  /** The project's PostHog with its key opened, 'off' when not connected, null when the key cannot be opened. */
+  async function posthogLink(uid: string, projectId: string): Promise<PosthogLink | null | 'off'> {
+    const stored = await store.getPosthog(uid, projectId);
+    if (!stored) return 'off';
+    const apiKey = await unseal(stored.sealedKey, config.sessionSecret, POSTHOG_PURPOSE);
+    return apiKey ? { region: stored.region, projectId: stored.projectId, apiKey } : null;
+  }
+
+  /**
+   * Writes each module's share to its PostHog flag. A PostHog failure never
+   * undoes the change: the module is saved, and the answer says 'failed'.
+   */
+  async function syncShares(uid: string, projectId: string, modules: StoredModule[]): Promise<SyncResult> {
+    const link = await posthogLink(uid, projectId);
+    if (link === 'off') return 'off';
+    if (!link) return 'failed';
+    const client = posthog(link, doFetch);
+    try {
+      for (const m of modules) await client.setShare(m.module, m.rollout);
+      return 'synced';
+    } catch (error) {
+      console.warn(`posthog sync failed: ${error instanceof Error ? error.message : 'unknown'}`);
+      return 'failed';
+    }
+  }
+
+  async function posthogProject(s: Session, projectId: string, request: Request): Promise<Response> {
+    const method = request.method;
+    if (method === 'DELETE') {
+      // The flags stay in PostHog. Apps keep the last share they read until someone changes it there.
+      await store.setPosthog(s.uid, projectId, null);
+      return new Response(null, { status: 204 });
+    }
+    if (method === 'GET') {
+      const link = await posthogLink(s.uid, projectId);
+      if (link === 'off') return json({ posthog: null });
+      if (!link) return json({ posthog: null, error: 'The saved PostHog key can no longer be read. Connect again.' });
+      return json({ posthog: { region: link.region, projectId: link.projectId, keyHint: keyHint(link.apiKey) } });
+    }
+    if (method === 'PUT') {
+      const input = await body(request);
+      const region = input.region;
+      const phProject = Number(input.projectId);
+      const apiKey = typeof input.apiKey === 'string' ? input.apiKey.trim() : '';
+      if (!isRegion(region)) throw new HttpError(400, 'region must be eu or us');
+      if (!Number.isSafeInteger(phProject) || phProject <= 0) throw new HttpError(400, 'projectId must be the PostHog project number');
+      if (apiKey.length < 10 || apiKey.length > 200 || /\s/.test(apiKey)) throw new HttpError(400, 'apiKey must be a PostHog personal API key');
+      const link: PosthogLink = { region, projectId: phProject, apiKey };
+      let accepted = false;
+      try {
+        accepted = await posthog(link, doFetch).check();
+      } catch {
+        accepted = false;
+      }
+      if (!accepted) {
+        throw new HttpError(400, 'PostHog did not accept that key for this project. It needs feature flag read and write.');
+      }
+      await store.setPosthog(s.uid, projectId, {
+        region,
+        projectId: phProject,
+        sealedKey: await seal(apiKey, config.sessionSecret, POSTHOG_PURPOSE),
+      });
+      const synced = await syncShares(s.uid, projectId, await store.listModules(projectId));
+      return json({ posthog: { region, projectId: phProject, keyHint: keyHint(apiKey) }, synced });
+    }
+    throw new HttpError(405, 'Method not allowed');
   }
 
   function github() {
@@ -459,6 +531,7 @@ export function createApp(deps: Deps) {
       throw new HttpError(405, 'Method not allowed');
     }
     if (sub === 'github' && !moduleName) return githubProject(s, p.id, request);
+    if (sub === 'posthog' && !moduleName) return posthogProject(s, p.id, request);
     if (sub === 'github' && moduleName === 'install' && !action && method === 'GET') return githubInstall(s, p.id);
     if (sub === 'history' && !moduleName && method === 'GET') {
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 500);

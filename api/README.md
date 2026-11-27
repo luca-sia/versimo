@@ -34,6 +34,9 @@ It signs people in through Lucasia ID, the issuer at `https://lucasia.ai/api/aut
 | `GET /api/projects/:id/github` | `{ github: { installationId, repo } \| null, repos }`, the repos the installation can see |
 | `PUT /api/projects/:id/github` `{ repo }` | Connect one of those repos and add its modules from tags |
 | `DELETE /api/projects/:id/github` | Disconnect |
+| `GET /api/projects/:id/posthog` | `{ posthog: { region, projectId, keyHint } \| null }`. The key itself is never sent back |
+| `PUT /api/projects/:id/posthog` `{ region, projectId, apiKey }` | Connect your PostHog (`eu` or `us`, the project number, a personal API key with feature flag read and write). The key is checked with PostHog, sealed, saved, and every module's flag is written |
+| `DELETE /api/projects/:id/posthog` | Disconnect. The flags stay in PostHog |
 | `POST /api/github/webhook` | GitHub events, checked by signature. A new stable `module/vX.Y.Z` tag adds that module to every project connected to the repo. Uninstalling the app disconnects its projects |
 
 Every write needs the session cookie and `Origin: https://versimo.dev`, except the webhook, which GitHub signs. A project that belongs to someone else answers 404.
@@ -44,9 +47,18 @@ Connecting a repo goes through the Versimo GitHub app, with "Request user author
 
 Modules come from tags. When a repo is connected, every module with a stable `module/vX.Y.Z` tag that the project does not have yet is added, with current as the newest stable version and last the one before. After that a new module's first stable tag adds it. Tags never change a module that exists: drafting next stays a choice. The GitHub routes answer 503 until the six `GITHUB_*` settings are set. See [docs/github-app.md](../docs/github-app.md).
 
+## PostHog flags
+
+A project can drive flags in its owner's own PostHog. Once connected, every module change (new module, draft, rollout, promote, rollback) writes the module's share to the flag `versimo-<module>`: released to 100%, payload `{"rollout": n}`. Apps that read flags with `postHogRollout` from the `versimo` package then follow the slider within their cache TTL, with no deploy. See [PostHog flags drive next](../docs/usage.md#posthog-flags-drive-next).
+
+- Only the module slug and the share go to PostHog. No user data.
+- A PostHog failure never blocks a change. The module is saved and the answer has `posthog: "failed"`. Without PostHog it is `"off"`, and `"synced"` when the flag was written.
+- The personal API key is sealed with AES-GCM under a key derived from `SESSION_SECRET` (HKDF, purpose `posthog-key`). Changing `SESSION_SECRET` means people connect PostHog again.
+- The Worker only talks to `eu.posthog.com` and `us.posthog.com`.
+
 ## Data
 
-`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app.
+`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app. `migrations/0002_posthog.sql` adds `posthog_region`, `posthog_project_id` and the sealed `posthog_key`.
 
 ## Tests
 
@@ -64,6 +76,7 @@ These steps change credentials or spend, so they wait for Catalin.
 2. **Make the database.** On the Postgres 18 server, create a `versimo` database and a `versimo_app` role that owns it, then run the migration:
 
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0001_init.sql
+       psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0002_posthog.sql
 
    Put the connection string in the same 1Password item.
 3. **Connect the Worker to it.** `npx wrangler hyperdrive create versimo-db --connection-string="postgres://..."`, then put the id it prints in `wrangler.jsonc`.

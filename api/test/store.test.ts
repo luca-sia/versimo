@@ -108,6 +108,22 @@ function contract(name: string, make: () => Promise<Store>) {
       assert.equal(await store.getGithub(a.id, p.id), null);
     });
 
+    it('keeps one PostHog connection per project, for its owner only', async () => {
+      const store = await make();
+      const a = await store.upsertUser(identity('ph-a'));
+      const b = await store.upsertUser(identity('ph-b'));
+      const p = await store.createProject(a.id, 'Shop');
+      assert.equal(await store.getPosthog(a.id, p.id), null);
+      const link = { region: 'eu' as const, projectId: 256908, sealedKey: 'v1.iv.data' };
+      assert.equal(await store.setPosthog(b.id, p.id, link), false);
+      assert.equal(await store.setPosthog(a.id, p.id, link), true);
+      assert.deepEqual(await store.getPosthog(a.id, p.id), link);
+      assert.equal(await store.getPosthog(b.id, p.id), null);
+      assert.deepEqual(await store.getProject(a.id, p.id).then((x) => Object.keys(x!).sort()), ['createdAt', 'id', 'name', 'updatedAt']);
+      assert.equal(await store.setPosthog(a.id, p.id, null), true);
+      assert.equal(await store.getPosthog(a.id, p.id), null);
+    });
+
     it('clears every project of a removed installation', async () => {
       const store = await make();
       const u = await store.upsertUser(identity('gh-clear'));
@@ -149,7 +165,9 @@ if (url) {
   // The migration has its own begin and commit, so it runs on a single connection.
   const migrate = async () => {
     const one = postgres(url, { max: 1, onnotice: () => {} });
-    await one.unsafe(await readFile(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8')).simple();
+    for (const file of ['0001_init.sql', '0002_posthog.sql']) {
+      await one.unsafe(await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8')).simple();
+    }
     await one.end();
   };
   before(async () => {
