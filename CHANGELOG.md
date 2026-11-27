@@ -2,8 +2,10 @@
 
 All notable changes are listed here. This project follows [semver](https://semver.org).
 
-## Unreleased
+## 0.3.0
 
+- Apps read their records from versimo.dev with the project's read key: `createClient({ source: 'https://versimo.dev/api/records/<read key>' })`
+- `createDeployClient` and the `versimo` command change a project's modules from CI with its deploy key: `create`, `draft`, `rollout`, `promote`, `rollback`, `list`
 - The app API signs in through Lucasia ID: endpoints and keys from discovery, a nonce, the ID token checked before a session starts, and the client secret sent as `client_secret_basic`
 - PostHog flags drive next. `postHogRollout` reads the share on next for each module from the PostHog flag `versimo-<module>`, so a rollout change needs no deploy. Bucketing stays with Versimo, so users land on the same version in every language. No user data is sent to PostHog.
 - `createClient` takes a `rollout` option that overrides the record's share
