@@ -10,10 +10,12 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
+  // The callbacks end in * because a route without one does not match a URL with a
+  // query string, and Lucasia and GitHub always add ?code=...&state=...
   "routes": [
     { "pattern": "versimo.dev/api/*", "zone_name": "versimo.dev" },
-    { "pattern": "versimo.dev/app/callback", "zone_name": "versimo.dev" },
-    { "pattern": "versimo.dev/app/github/callback", "zone_name": "versimo.dev" }
+    { "pattern": "versimo.dev/app/callback*", "zone_name": "versimo.dev" },
+    { "pattern": "versimo.dev/app/github/callback*", "zone_name": "versimo.dev" }
   ],
   "vars": {
     "ISSUER": "https://lucasia.ai/api/auth",
