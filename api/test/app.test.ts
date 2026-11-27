@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { createClient, validateRecord } from '../../src/index.js';
 import { createApp, type Config } from '../src/app.js';
 import { MemoryStore } from '../src/memory-store.js';
 import { createOidc } from '../src/oidc.js';
@@ -399,5 +400,71 @@ describe('saved projects', () => {
     assert.equal(((await renamed.json()) as { project: { name: string } }).project.name, 'Store');
     assert.equal((await call(app, session, 'DELETE', `/api/projects/${project.id}`)).status, 204);
     assert.equal((await call(app, session, 'GET', `/api/projects/${project.id}`)).status, 404);
+  });
+});
+
+describe('records for apps', () => {
+  async function setUp() {
+    const app = createApp({ store: new MemoryStore(), config, fetch: fakeIdp().fetch });
+    const { session } = await signIn(app);
+    const { project } = (await (await call(app, session, 'POST', '/api/projects', { name: 'Shop' })).json()) as {
+      project: { id: string };
+    };
+    await call(app, session, 'POST', `/api/projects/${project.id}/modules`, { module: 'billing', current: '2.4.0', last: '2.3.1' });
+    return { app, session, id: project.id };
+  }
+
+  const newKey = async (app: ReturnType<typeof createApp>, session: string, id: string) => {
+    const res = await call(app, session, 'POST', `/api/projects/${id}/read-key`);
+    assert.equal(res.status, 201);
+    return ((await res.json()) as { readKey: string }).readKey;
+  };
+
+  it('serves a valid record to anyone holding the read key, with no session', async () => {
+    const { app, session, id } = await setUp();
+    assert.deepEqual(await (await call(app, session, 'GET', `/api/projects/${id}/read-key`)).json(), { readKey: false });
+    const key = await newKey(app, session, id);
+    assert.match(key, /^vrk_[A-Za-z0-9_-]{32,}$/);
+    assert.deepEqual(await (await call(app, session, 'GET', `/api/projects/${id}/read-key`)).json(), { readKey: true });
+
+    const res = await app(new Request(`${ORIGIN}/api/records/${key}/billing.json`));
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('access-control-allow-origin'), '*');
+    assert.match(res.headers.get('cache-control')!, /max-age=\d+/);
+    assert.deepEqual(res.headers.getSetCookie(), []);
+    const record = await res.json();
+    assert.ok(validateRecord(record).ok);
+
+    const client = createClient({ source: `${ORIGIN}/api/records/${key}`, fetch: (input) => app(new Request(input as string)) });
+    assert.equal(await client.version('billing', { userId: 'u1' }), '2.4.0');
+  });
+
+  it('answers 404 alike for a wrong key, a missing module and a revoked or rotated key', async () => {
+    const { app, session, id } = await setUp();
+    const first = await newKey(app, session, id);
+    const second = await newKey(app, session, id);
+    const status = async (path: string) => (await app(new Request(ORIGIN + path))).status;
+    assert.equal(await status(`/api/records/${first}/billing.json`), 404);
+    assert.equal(await status(`/api/records/${second}/billing.json`), 200);
+    assert.equal(await status(`/api/records/${second}/search.json`), 404);
+    assert.equal(await status(`/api/records/vrk_nope/billing.json`), 404);
+    assert.equal(await status(`/api/records/${second}/billing`), 404);
+    assert.equal((await call(app, session, 'DELETE', `/api/projects/${id}/read-key`)).status, 204);
+    assert.equal(await status(`/api/records/${second}/billing.json`), 404);
+  });
+
+  it('lets only the owner see, make or remove a read key', async () => {
+    const store = new MemoryStore();
+    const a = createApp({ store, config, fetch: fakeIdp('user-a', 'A').fetch });
+    const b = createApp({ store, config, fetch: fakeIdp('user-b', 'B').fetch });
+    const sa = (await signIn(a)).session;
+    const sb = (await signIn(b)).session;
+    const { project } = (await (await call(a, sa, 'POST', '/api/projects', { name: 'Mine' })).json()) as {
+      project: { id: string };
+    };
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      assert.equal((await call(b, sb, method, `/api/projects/${project.id}/read-key`)).status, 404);
+    }
+    assert.deepEqual(await (await call(a, sa, 'GET', `/api/projects/${project.id}/read-key`)).json(), { readKey: false });
   });
 });

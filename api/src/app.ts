@@ -109,6 +109,14 @@ function projectName(value: unknown): string {
   return name;
 }
 
+const READ_KEY = /^vrk_[A-Za-z0-9_-]{32,64}$/;
+const RECORD_FILE = /^([a-z0-9]+(?:-[a-z0-9]+)*)\.json$/;
+
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 const toRecord = (m: StoredModule): ModuleRecord => ({ ...m, history: [] });
 
 const isStable = (v: string) => !/^[^+]*-/.test(v);
@@ -342,6 +350,36 @@ export function createApp(deps: Deps) {
     }
   }
 
+  async function readKeyProject(s: Session, projectId: string, method: string): Promise<Response> {
+    if (method === 'GET') return json({ readKey: Boolean(await store.hasReadKey(s.uid, projectId)) });
+    if (method === 'POST') {
+      // A new key replaces the old one at once. Only its hash is kept, so it is shown this one time.
+      const key = `vrk_${randomToken(32)}`;
+      await store.setReadKey(s.uid, projectId, await sha256(key));
+      return json({ readKey: key }, 201);
+    }
+    if (method === 'DELETE') {
+      await store.setReadKey(s.uid, projectId, null);
+      return new Response(null, { status: 204 });
+    }
+    throw new HttpError(405, 'Method not allowed');
+  }
+
+  /** One module's record for an app holding the project's read key. Every miss is the same 404. */
+  async function publicRecord(key: string | undefined, file: string | undefined): Promise<Response> {
+    const missing = () => json({ error: 'Not found' }, 404, { 'access-control-allow-origin': '*' });
+    const slug = file?.match(RECORD_FILE)?.[1];
+    if (!key || !READ_KEY.test(key) || !slug) return missing();
+    const projectId = await store.projectForReadKey(await sha256(key));
+    if (!projectId) return missing();
+    const found = (await store.listModules(projectId)).find((m) => m.module === slug);
+    if (!found) return missing();
+    return json(toRecord(found), 200, {
+      'cache-control': 'public, max-age=15',
+      'access-control-allow-origin': '*',
+    });
+  }
+
   async function posthogProject(s: Session, projectId: string, request: Request): Promise<Response> {
     const method = request.method;
     if (method === 'DELETE') {
@@ -504,6 +542,15 @@ export function createApp(deps: Deps) {
       return json({ user: s ? { id: s.uid, name: s.name, email: s.email } : null });
     }
 
+    if (parts[0] === 'api' && parts[1] === 'records' && parts.length === 4 && method === 'GET') {
+      try {
+        return await publicRecord(parts[2], parts[3]);
+      } catch (error) {
+        console.error(error);
+        return json({ error: 'Something went wrong' }, 500, { 'access-control-allow-origin': '*' });
+      }
+    }
+
     if (parts[0] !== 'api' || parts[1] !== 'projects') throw new HttpError(404, 'Not found');
     const s = await requireSession(request);
     const [, , id, sub, moduleName, action, extra] = parts;
@@ -532,6 +579,7 @@ export function createApp(deps: Deps) {
     }
     if (sub === 'github' && !moduleName) return githubProject(s, p.id, request);
     if (sub === 'posthog' && !moduleName) return posthogProject(s, p.id, request);
+    if (sub === 'read-key' && !moduleName) return readKeyProject(s, p.id, method);
     if (sub === 'github' && moduleName === 'install' && !action && method === 'GET') return githubInstall(s, p.id);
     if (sub === 'history' && !moduleName && method === 'GET') {
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 500);

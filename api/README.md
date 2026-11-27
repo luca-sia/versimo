@@ -37,15 +37,32 @@ It signs people in through Lucasia ID, the issuer at `https://lucasia.ai/api/aut
 | `GET /api/projects/:id/posthog` | `{ posthog: { region, projectId, keyHint } \| null }`. The key itself is never sent back |
 | `PUT /api/projects/:id/posthog` `{ region, projectId, apiKey }` | Connect your PostHog (`eu` or `us`, the project number, a personal API key with feature flag read and write). The key is checked with PostHog, sealed, saved, and every module's flag is written |
 | `DELETE /api/projects/:id/posthog` | Disconnect. The flags stay in PostHog |
+| `GET /api/projects/:id/read-key` | `{ readKey: true \| false }`, whether the project has a read key |
+| `POST /api/projects/:id/read-key` | A new read key, `{ readKey: "vrk_..." }`. Shown once. The old key stops working, apart from answers cached for up to 15 seconds |
+| `DELETE /api/projects/:id/read-key` | Remove the read key. Apps can no longer fetch records |
+| `GET /api/records/:readKey/:module.json` | The module's record for an app. No session, CORS open, cached for 15 seconds. Any miss is a 404 |
 | `POST /api/github/webhook` | GitHub events, checked by signature. A new stable `module/vX.Y.Z` tag adds that module to every project connected to the repo. Uninstalling the app disconnects its projects |
 
-Every write needs the session cookie and `Origin: https://versimo.dev`, except the webhook, which GitHub signs. A project that belongs to someone else answers 404.
+Every write needs the session cookie and `Origin: https://versimo.dev`, except the webhook, which GitHub signs. The records route needs only the read key. A project that belongs to someone else answers 404.
 
 ## GitHub app
 
 Connecting a repo goes through the Versimo GitHub app, with "Request user authorization (OAuth) during installation" on. GitHub sends the person back to `/app/github/callback` with a code and an installation id. The id in that URL could be forged, so the Worker swaps the code for the person's own token and checks that they can see that installation before it saves anything.
 
 Modules come from tags. When a repo is connected, every module with a stable `module/vX.Y.Z` tag that the project does not have yet is added, with current as the newest stable version and last the one before. After that a new module's first stable tag adds it. Tags never change a module that exists: drafting next stays a choice. The GitHub routes answer 503 until the six `GITHUB_*` settings are set. See [docs/github-app.md](../docs/github-app.md).
+
+## Records for apps
+
+An app reads its records with the project's read key, so it needs no session:
+
+```ts
+import { createClient } from 'versimo';
+
+const versimo = createClient({ source: `https://versimo.dev/api/records/${VERSIMO_READ_KEY}` });
+const version = await versimo.version('billing', { userId });
+```
+
+The key only reads records, which hold version numbers and the rollout share. Treat it like a publishable key: fine in a browser bundle, rotated with `POST /read-key`. Only its SHA-256 is stored.
 
 ## PostHog flags
 
@@ -58,7 +75,7 @@ A project can drive flags in its owner's own PostHog. Once connected, every modu
 
 ## Data
 
-`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app. `migrations/0002_posthog.sql` adds `posthog_region`, `posthog_project_id` and the sealed `posthog_key`.
+`migrations/0001_init.sql` has four tables: `users`, `projects`, `modules` (last, current, next, rollout, healthy) and `history`, which only ever gets new rows. `projects` also has `github_installation_id` and `github_repo` for the GitHub app. `migrations/0002_posthog.sql` adds `posthog_region`, `posthog_project_id` and the sealed `posthog_key`. `migrations/0003_read_key.sql` adds `read_key_hash`.
 
 ## Tests
 
@@ -77,6 +94,7 @@ These steps change credentials or spend, so they wait for Catalin.
 
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0001_init.sql
        psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0002_posthog.sql
+       psql "postgres://versimo_app:...@host:5432/versimo" -f migrations/0003_read_key.sql
 
    Put the connection string in the same 1Password item.
 3. **Connect the Worker to it.** `npx wrangler hyperdrive create versimo-db --connection-string="postgres://..."`, then put the id it prints in `wrangler.jsonc`.

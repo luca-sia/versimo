@@ -131,6 +131,24 @@ export class PgStore implements Store {
     return rows.length;
   }
 
+  async hasReadKey(ownerId: string, projectId: string): Promise<boolean | null> {
+    const [row] = await this.sql`
+      select read_key_hash is not null as has_key from projects where id = ${projectId} and owner_id = ${ownerId}`;
+    return row ? Boolean(row.has_key) : null;
+  }
+
+  async setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean> {
+    const rows = await this.sql`
+      update projects set read_key_hash = ${hash}, updated_at = now()
+      where id = ${projectId} and owner_id = ${ownerId} returning id`;
+    return rows.length === 1;
+  }
+
+  async projectForReadKey(hash: string): Promise<string | null> {
+    const [row] = await this.sql`select id from projects where read_key_hash = ${hash}`;
+    return row ? String(row.id) : null;
+  }
+
   async listModules(projectId: string): Promise<StoredModule[]> {
     const rows = await this.sql`
       select module, last, current, next, rollout, healthy, updated_at from modules
