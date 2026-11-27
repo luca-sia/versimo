@@ -1,8 +1,9 @@
-import type { AuditEntry, GithubLink, Identity, Project, Store, StoredModule, User } from './store.js';
+import type { AuditEntry, GithubLink, Identity, PosthogStored, Project, Store, StoredModule, User } from './store.js';
 
 interface ProjectRow extends Project {
   ownerId: string;
   github?: GithubLink | null;
+  posthog?: PosthogStored | null;
 }
 
 /** An in-memory Store for tests and local runs. Same rules as the Postgres one. */
@@ -73,6 +74,19 @@ export class MemoryStore implements Store {
     return true;
   }
 
+  async getPosthog(ownerId: string, projectId: string): Promise<PosthogStored | null> {
+    const row = this.projects.get(projectId);
+    return row && row.ownerId === ownerId && row.posthog ? { ...row.posthog } : null;
+  }
+
+  async setPosthog(ownerId: string, projectId: string, link: PosthogStored | null): Promise<boolean> {
+    const row = this.projects.get(projectId);
+    if (!row || row.ownerId !== ownerId) return false;
+    row.posthog = link ? { ...link } : null;
+    row.updatedAt = new Date().toISOString();
+    return true;
+  }
+
   async projectsForRepo(installationId: number, repo: string): Promise<string[]> {
     const key = repo.toLowerCase();
     return [...this.projects.values()]
@@ -127,6 +141,6 @@ export class MemoryStore implements Store {
   }
 }
 
-function strip({ ownerId: _, github: __, ...project }: ProjectRow): Project {
+function strip({ ownerId: _, github: __, posthog: ___, ...project }: ProjectRow): Project {
   return { ...project };
 }

@@ -9,6 +9,7 @@ All notable changes are listed here. This project follows [semver](https://semve
 - `createClient` takes a `rollout` option that overrides the record's share
 - Python (`PostHogRollout`) and Go (`NewPostHogRollout`) get the same
 - `posthog` section in `spec/vectors.json`
+- The app API writes each module's share to the project's own PostHog flag, so the slider on versimo.dev drives next. Connect with `PUT /api/projects/:id/posthog`. The personal key is sealed at rest
 
 ## 0.2.0
 

@@ -38,6 +38,13 @@ export interface GithubLink {
   repo: string | null;
 }
 
+/** The PostHog project a project writes its flags to. The key stays sealed in the store. */
+export interface PosthogStored {
+  region: 'eu' | 'us';
+  projectId: number;
+  sealedKey: string;
+}
+
 /** A module as stored. The same shape as a Versimo record, without the history. */
 export type StoredModule = Omit<ModuleRecord, 'history' | '$schema'>;
 
@@ -61,6 +68,10 @@ export interface Store {
   projectsForRepo(installationId: number, repo: string): Promise<string[]>;
   /** Disconnects every project from an installation that was removed. Returns how many. */
   clearInstallation(installationId: number): Promise<number>;
+  /** Null when the project has no PostHog, does not exist or belongs to someone else. */
+  getPosthog(ownerId: string, projectId: string): Promise<PosthogStored | null>;
+  /** Connects or, with null, disconnects PostHog. False when the project is not the owner's. */
+  setPosthog(ownerId: string, projectId: string, link: PosthogStored | null): Promise<boolean>;
   listModules(projectId: string): Promise<StoredModule[]>;
   /**
    * Adds a module and its create entry. False when the slug is taken.

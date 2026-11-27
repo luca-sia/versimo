@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 
-import type { AuditEntry, GithubLink, Identity, Project, Store, StoredModule, User } from './store.js';
+import type { AuditEntry, GithubLink, Identity, PosthogStored, Project, Store, StoredModule, User } from './store.js';
 
 type Sql = postgres.Sql;
 
@@ -92,6 +92,24 @@ export class PgStore implements Store {
     const rows = await this.sql`
       update projects set github_installation_id = ${link?.installationId ?? null},
         github_repo = ${link?.repo ?? null}, updated_at = now()
+      where id = ${projectId} and owner_id = ${ownerId}
+      returning id`;
+    return rows.length > 0;
+  }
+
+  async getPosthog(ownerId: string, projectId: string): Promise<PosthogStored | null> {
+    const [row] = await this.sql`
+      select posthog_region, posthog_project_id, posthog_key from projects
+      where id = ${projectId} and owner_id = ${ownerId} and posthog_key is not null`;
+    return row
+      ? { region: row.posthog_region, projectId: Number(row.posthog_project_id), sealedKey: row.posthog_key }
+      : null;
+  }
+
+  async setPosthog(ownerId: string, projectId: string, link: PosthogStored | null): Promise<boolean> {
+    const rows = await this.sql`
+      update projects set posthog_region = ${link?.region ?? null},
+        posthog_project_id = ${link?.projectId ?? null}, posthog_key = ${link?.sealedKey ?? null}, updated_at = now()
       where id = ${projectId} and owner_id = ${ownerId}
       returning id`;
     return rows.length > 0;
