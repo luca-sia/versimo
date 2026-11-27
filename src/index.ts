@@ -23,6 +23,7 @@ export {
   type RecordStore,
 } from './monitor.js';
 export { compareSemver, isSemver, parseSemver, SEMVER_PATTERN, type ParsedSemver } from './semver.js';
+export { createDeployClient, type DeployClient, type DeployClientOptions, type DeployModule } from './deploy.js';
 export { createClient, type ClientOptions, type SourceFn, type VersimoClient } from './client.js';
 export {
   postHogFlagKey,

@@ -202,6 +202,27 @@ versimo.clear('billing'); // make this process see it at once
 
 Other processes see the change after their cache expires.
 
+## versimo.dev
+
+A project on [versimo.dev/app](https://versimo.dev/app) keeps your records for you. It gives you two keys.
+
+The read key only reads records. It is safe in a browser bundle:
+
+```ts
+const versimo = createClient({ source: `https://versimo.dev/api/records/${VERSIMO_READ_KEY}` });
+```
+
+The deploy key changes modules. Keep it in CI secrets. If your pipeline already ships next, promote and rollback, tell Versimo after each step:
+
+```sh
+npx versimo draft app 1.4.0      # next uploaded at 0%
+npx versimo rollout app 10
+npx versimo promote app
+npx versimo rollback app         # after an automatic return to last
+```
+
+The command reads `VERSIMO_DEPLOY_KEY`. From code, use `createDeployClient({ key })`, which has the same calls.
+
 ## Health checks
 
 Your monitoring decides when current is unhealthy. When it does, write the record with `healthy: false`. Users get last at once. Then call `rollback` to make it permanent, and ship the fix as a patch.
