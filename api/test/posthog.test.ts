@@ -197,7 +197,7 @@ describe('PostHog flags', () => {
     const session = await signIn(app);
     const id = await projectWithModule(app, session);
     const put = (body: unknown) => call(app, session, 'PUT', `/api/projects/${id}/posthog`, body);
-    assert.equal((await put({ region: 'eu', projectId: 256908, apiKey: 'phx_wrong_key_123' })).status, 400);
+    assert.equal((await put({ region: 'eu', projectId: 256908, apiKey: 'not-a-real-key' })).status, 400);
     assert.equal((await put({ region: 'eu', projectId: 1, apiKey: KEY })).status, 400);
     assert.equal((await put({ region: 'mars', projectId: 256908, apiKey: KEY })).status, 400);
     assert.equal((await put({ region: 'eu', projectId: -3, apiKey: KEY })).status, 400);
