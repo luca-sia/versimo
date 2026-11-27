@@ -72,6 +72,12 @@ export interface Store {
   getPosthog(ownerId: string, projectId: string): Promise<PosthogStored | null>;
   /** Connects or, with null, disconnects PostHog. False when the project is not the owner's. */
   setPosthog(ownerId: string, projectId: string, link: PosthogStored | null): Promise<boolean>;
+  /** Whether the project has a read key. Null when the project does not exist or belongs to someone else. */
+  hasReadKey(ownerId: string, projectId: string): Promise<boolean | null>;
+  /** Stores the hash of a new read key or, with null, removes it. False when the project is not the owner's. */
+  setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean>;
+  /** The id of the project whose read key has this hash, or null. */
+  projectForReadKey(hash: string): Promise<string | null>;
   listModules(projectId: string): Promise<StoredModule[]>;
   /**
    * Adds a module and its create entry. False when the slug is taken.

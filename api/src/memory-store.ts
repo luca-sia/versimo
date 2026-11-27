@@ -4,6 +4,7 @@ interface ProjectRow extends Project {
   ownerId: string;
   github?: GithubLink | null;
   posthog?: PosthogStored | null;
+  readKey?: string | null;
 }
 
 /** An in-memory Store for tests and local runs. Same rules as the Postgres one. */
@@ -105,6 +106,24 @@ export class MemoryStore implements Store {
     return n;
   }
 
+  async hasReadKey(ownerId: string, projectId: string): Promise<boolean | null> {
+    const row = this.projects.get(projectId);
+    return row && row.ownerId === ownerId ? Boolean(row.readKey) : null;
+  }
+
+  async setReadKey(ownerId: string, projectId: string, hash: string | null): Promise<boolean> {
+    const row = this.projects.get(projectId);
+    if (!row || row.ownerId !== ownerId) return false;
+    row.readKey = hash;
+    row.updatedAt = new Date().toISOString();
+    return true;
+  }
+
+  async projectForReadKey(hash: string): Promise<string | null> {
+    for (const row of this.projects.values()) if (row.readKey === hash) return row.id;
+    return null;
+  }
+
   async listModules(projectId: string): Promise<StoredModule[]> {
     return [...(this.modules.get(projectId)?.values() ?? [])]
       .sort((a, b) => a.module.localeCompare(b.module))
@@ -141,6 +160,6 @@ export class MemoryStore implements Store {
   }
 }
 
-function strip({ ownerId: _, github: __, posthog: ___, ...project }: ProjectRow): Project {
+function strip({ ownerId: _, github: __, posthog: ___, readKey: ____, ...project }: ProjectRow): Project {
   return { ...project };
 }
